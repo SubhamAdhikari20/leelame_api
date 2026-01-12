@@ -41,7 +41,7 @@ export default [
             'no-console': 'off',
             'no-unused-vars': 'off',
             "no-duplicate-imports": "error",
-            '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+            '@typescript-eslint/no-unused-vars': ['off', { argsIgnorePattern: '^_' }],
             '@typescript-eslint/no-explicit-any': 'warn',
             '@typescript-eslint/consistent-type-imports': 'error',
             'import/no-unresolved': 'error',

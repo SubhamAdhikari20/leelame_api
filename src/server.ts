@@ -11,6 +11,7 @@ import morgan from "morgan";
 import helmet from "helmet";
 import "colors";
 import connectDB from "./config/db.ts";
+import buyerRoute from "./routes/buyer.route.ts";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -109,9 +110,10 @@ app.use(cors(corsOptions)); // Enable CORS with options
 app.use(limiter); // Apply rate limiting to all requests
 app.use(express.static(path.join(__dirname, "public"))); // Serve static files
 
-app.get('/', (req, res) => {
-    res.send('Hello, World!');
-});
+// ---------------------------- Users Routes -------------------------------
+// Buyers Routes
+app.use("/api/v1/buyers/login", authLimiter);
+app.use("/api/v1/buyers", buyerRoute);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {

@@ -3,11 +3,6 @@
     "module": "nodenext",
     "target": "esnext",
     "types": [],
-    // For nodejs:
-    // "lib": ["esnext"],
-    // "types": ["node"],
-    // and npm install -D @types/node
-    // Other Outputs
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
@@ -17,26 +12,25 @@
     "allowJs": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    // Style Options
-    // "noImplicitReturns": true,
-    // "noImplicitOverride": true,
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
-    // "noFallthroughCasesInSwitch": true,
-    // "noPropertyAccessFromIndexSignature": true,
-    // Recommended Options
     "strict": true,
     "jsx": "react-jsx",
-    "verbatimModuleSyntax": true,
+    // "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
   },
   "include": [
     "**/*.ts",
     "**/*.mts",
     "**/*.js",
+    "**/*.tsx",
   ],
   "exclude": [
     "node_modules"
