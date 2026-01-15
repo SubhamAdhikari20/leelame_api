@@ -112,8 +112,8 @@ app.use(express.static(path.join(__dirname, "public"))); // Serve static files
 
 // ---------------------------- Users Routes -------------------------------
 // Buyers Routes
-app.use("/api/v1/buyers/login", authLimiter);
-app.use("/api/v1/buyers", buyerRoute);
+app.use("/api/v1/users/buyer/login", authLimiter);
+app.use("/api/v1/users/buyer", buyerRoute);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {

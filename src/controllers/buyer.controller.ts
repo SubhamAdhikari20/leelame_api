@@ -4,6 +4,7 @@ import { BuyerResponseDto, CheckUsernameUniqueDto, CreatedBuyerDto, ForgotPasswo
 import { BuyerService } from "@/services/buyer.service.ts";
 import { z } from "zod";
 import { HttpError } from "@/errors/http-error.ts";
+import asyncHandler from "@/middleware/async.middleware.ts";
 
 
 export class BuyerController {
@@ -13,7 +14,7 @@ export class BuyerController {
         this.buyerService = buyerService;
     }
 
-    createBuyer = async (req: Request, res: Response) => {
+    createBuyer = asyncHandler(async (req: Request, res: Response) => {
         try {
             const body = req.body;
             const validatedData = CreatedBuyerDto.safeParse(body);
@@ -57,9 +58,9 @@ export class BuyerController {
                 message: "Internal Server Error"
             });
         }
-    };
+    });
 
-    checkUsernameUnique = async (req: Request, res: Response) => {
+    checkUsernameUnique = asyncHandler(async (req: Request, res: Response) => {
         try {
             const { searchParams } = new URL(req.url);
             const queryParam = {
@@ -107,9 +108,9 @@ export class BuyerController {
                 message: "Internal Server Error"
             });
         }
-    };
+    });
 
-    verifyOtpForRegistration = async (req: Request, res: Response) => {
+    verifyOtpForRegistration = asyncHandler(async (req: Request, res: Response) => {
         try {
             const body = req.body;
             const validatedData = VerifyOtpForRegistrationDto.safeParse(body);
@@ -143,9 +144,9 @@ export class BuyerController {
                 message: "Internal Server Error"
             });
         }
-    };
+    });
 
-    loginBuyer = async (req: Request, res: Response) => {
+    loginBuyer = asyncHandler(async (req: Request, res: Response) => {
         try {
             const body = req.body;
             const validatedData = LoginBuyerDto.safeParse(body);
@@ -178,26 +179,20 @@ export class BuyerController {
             console.error("Error in buyer signup controller:", error);
 
             if (error instanceof HttpError) {
-                return Response.json(
-                    {
-                        success: false,
-                        message: error.message
-                    },
-                    { status: error.status }
-                );
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
             }
 
-            return Response.json(
-                {
-                    success: false,
-                    message: "Internal Server Error"
-                },
-                { status: 500 }
-            );
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
         }
-    };
+    });
 
-    forgotPassword = async (req: Request, res: Response) => {
+    forgotPassword = asyncHandler(async (req: Request, res: Response) => {
         try {
             const body = req.body;
             const validatedData = ForgotPasswordDto.safeParse(body);
@@ -231,9 +226,9 @@ export class BuyerController {
                 message: "Internal Server Error"
             });
         }
-    };
+    });
 
-    verifyOtpForResetPassword = async (req: Request, res: Response) => {
+    verifyOtpForResetPassword = asyncHandler(async (req: Request, res: Response) => {
         try {
             const body = req.body;
             const validatedData = VerifyOtpForResetPasswordDto.safeParse(body);
@@ -267,9 +262,9 @@ export class BuyerController {
                 message: "Internal Server Error"
             });
         }
-    };
+    });
 
-    resetPassword = async (req: Request, res: Response) => {
+    resetPassword = asyncHandler(async (req: Request, res: Response) => {
         try {
             const body = req.body;
             const validatedData = ResetPasswordDto.safeParse(body);
@@ -303,9 +298,9 @@ export class BuyerController {
                 message: "Internal Server Error"
             });
         }
-    };
+    });
 
-    handleSendEmailForRegistration = async (req: Request, res: Response) => {
+    handleSendEmailForRegistration = asyncHandler(async (req: Request, res: Response) => {
         try {
             const body = req.body;
             const validatedData = SendEmailForRegistrationDto.safeParse(body);
@@ -348,5 +343,5 @@ export class BuyerController {
                 message: "Internal Server Error"
             });
         }
-    };
+    });
 }
