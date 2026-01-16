@@ -2,7 +2,6 @@
   "compilerOptions": {
     "module": "nodenext",
     "target": "esnext",
-    "types": [],
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
@@ -20,6 +19,7 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
+    "incremental": true,
     "paths": {
       "@/*": [
         "./src/*"

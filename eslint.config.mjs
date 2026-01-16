@@ -49,11 +49,14 @@ export default [
         },
 
         // Optionally add settings if you use TS path aliases
-        // settings: {
-        //   'import/resolver': {
-        //     typescript: { project: './tsconfig.json' }
-        //   }
-        // }
+        settings: {
+            'import/resolver': {
+                typescript: {
+                    alwaysTryTypes: true,  // Resolves .ts/.d.ts extensions
+                    project: './tsconfig.json'  // Uses your paths and config
+                },
+            }
+        }
     },
 
     // tests override

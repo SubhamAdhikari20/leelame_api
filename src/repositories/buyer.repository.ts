@@ -1,10 +1,20 @@
 // src/repositories/buyer.repository.ts
-import { BuyerRepositoryInterface } from "./../interfaces/buyer.repository.interface.ts";
-import { Buyer, BuyerDocument, ProviderBuyer } from "./../types/buyer.type.ts";
+import type { BuyerRepositoryInterface } from "./../interfaces/buyer.repository.interface.ts";
+import type { Buyer, BuyerDocument, ProviderBuyer } from "./../types/buyer.type.ts";
 import BuyerModel from "./../models/buyer.model.ts";
+import UserModel from "./../models/user.model.ts";
 
 
 export class BuyerRepository implements BuyerRepositoryInterface {
+    findBuyerByEmail = async (email: string): Promise<BuyerDocument | null> => {
+        const user = await UserModel.findOne({ email }).lean();
+        if (!user) {
+            return null;
+        }
+        const buyer = await this.findBuyerByBaseUserId(user._id.toString());
+        return buyer;
+    }
+
     createBuyer = async (buyer: Buyer): Promise<BuyerDocument | null> => {
         const newBuyer = await BuyerModel.create(buyer);
         return newBuyer;
@@ -21,10 +31,11 @@ export class BuyerRepository implements BuyerRepositoryInterface {
 
     findBuyerById = async (id: string): Promise<BuyerDocument | null> => {
         const buyer = await BuyerModel.findById(id).lean();
+        // const buyer = await BuyerModel.findOne({ _id: id }).lean();
         return buyer;
     };
 
-    findUserById = async (userId: string): Promise<BuyerDocument | null> => {
+    findBuyerByBaseUserId = async (userId: string): Promise<BuyerDocument | null> => {
         const buyer = await BuyerModel.findOne({ userId: userId }).lean();
         // const buyer = await BuyerModel.findOne({ userId: new Schema.Types.ObjectId(userId) }).lean();
         return buyer;

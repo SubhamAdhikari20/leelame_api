@@ -1,6 +1,6 @@
 // src/helpers/send-registration-verification-email.tsx
 import nodemailer from "nodemailer";
-import { ApiResponseType } from "./../types/api-response.type.ts";
+import type { ApiResponseType } from "./../types/api-response.type.ts";
 
 
 export const sendVerificationEmail = async (

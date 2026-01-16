@@ -1,8 +1,10 @@
 // src/middleware/auth.middleware.ts
 import type { Request, Response, NextFunction } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
+import type { JwtPayload } from "jsonwebtoken";
 import asyncHandler from "./async.middleware.ts";
-import { UserRepositoryInterface } from "@/interfaces/user.repository.interface.ts";
+import type { UserRepositoryInterface } from "@/interfaces/user.repository.interface.ts";
+import type { BuyerRepositoryInterface } from "@/interfaces/buyer.repository.interface.ts";
 
 
 declare global {
@@ -16,9 +18,11 @@ declare global {
 //PROTECT THE MIDDLEWARE
 export class AuthMiddleware {
     private userRepo: UserRepositoryInterface;
+    private buyerRepo: BuyerRepositoryInterface;
 
-    constructor(userRepo: UserRepositoryInterface) {
+    constructor(userRepo: UserRepositoryInterface, buyerRepo: BuyerRepositoryInterface) {
         this.userRepo = userRepo;
+        this.buyerRepo = buyerRepo;
     }
 
     //Protect routes
@@ -36,22 +40,29 @@ export class AuthMiddleware {
         //Make sure token exist
         if (!token) {
             // return next(new HttpError(401, 'Not authorized to access this route'));
-            return res
-                .status(401)
-                .json({ message: "Not authorized to access this route" });
+            return res.status(401).json({ message: "Not authorized to access this route" });
         }
 
         try {
             //Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
             // console.log(decoded);
-            req.user = await this.userRepo.findUserById(decoded.id);
+
+            const baseUser = await this.userRepo.findUserById(decoded.userId.toString());
+            if (!baseUser) {
+                return res.status(404).json({ message: "Base user with this id not found!" });
+            }
+            console.log(baseUser);
+
+            req.user = await this.buyerRepo.findBuyerById(decoded._id.toString());
+            if (!req.user) {
+                return res.status(404).json({ message: "Buyer with this id not found!" });
+            }
+            console.log(req.user);
             next();
         } catch (err) {
             // return next(new HttpError(401, 'Not authorized to access this route'));
-            return res
-                .status(401)
-                .json({ message: "Not authorized to access this route" });
+            return res.status(401).json({ message: "Not authorized to access this route" });
         }
     });
 
