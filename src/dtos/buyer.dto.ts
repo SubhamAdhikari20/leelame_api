@@ -12,7 +12,7 @@ export const CreatedBuyerDto = z.object({
     password: passwordValidation,
     email: emailValidation,
     role: roleValidation,
-    terms: termsAndConditionsValidation,
+    terms: termsAndConditionsValidation, 
 });
 export type CreatedBuyerDtoType = z.infer<typeof CreatedBuyerDto>;
 

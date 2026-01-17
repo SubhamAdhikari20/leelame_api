@@ -33,6 +33,7 @@ router.put("/forgot-password", buyerAuthController.forgotPassword);
 router.put("/verify-account-reset-password", buyerAuthController.verifyOtpForResetPassword);
 router.put("/reset-password", buyerAuthController.resetPassword);
 
+router.get("/logout", buyerAuthController.logoutBuyer);
 
 // Buyer Other CRUDs
 router.get("/:email", authMiddleware.protect, buyerController.getBuyerByEmail);

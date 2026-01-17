@@ -344,4 +344,30 @@ export class BuyerAuthController {
             });
         }
     });
+
+    logoutBuyer = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const result = await this.buyerAuthService.logoutBuyer();
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+            });
+        }
+        catch (error: Error | any) {
+            console.error("Error in buyer logout controller:", error);
+
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
 }

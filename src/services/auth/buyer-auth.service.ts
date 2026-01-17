@@ -635,4 +635,13 @@ export class BuyerAuthService {
         };
         return response;
     };
+
+    logoutBuyer = async (): Promise<BuyerResponseDtoType> => {
+        const response: BuyerResponseDtoType = {
+            success: true,
+            message: "Logged out successfully.",
+            status: 200,
+        };
+        return response;
+    };
 }
