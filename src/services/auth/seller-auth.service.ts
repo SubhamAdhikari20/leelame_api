@@ -1,32 +1,32 @@
-// src/services/buyer-auth.service.ts
+// src/services/seller-auth.service.ts
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import type { CreatedBuyerDtoType, BuyerResponseDtoType, CheckUsernameUniqueDtoType, LoginBuyerDtoType, ForgotPasswordDtoType, VerifyOtpForRegistrationDtoType, VerifyOtpForResetPasswordDtoType, ResetPasswordDtoType, SendEmailForRegistrationDtoType } from "../../dtos/buyer.dto.ts";
-import type { BuyerRepositoryInterface } from "../../interfaces/buyer.repository.interface.ts";
-import type { UserRepositoryInterface } from "../../interfaces/user.repository.interface.ts";
+import type { CreatedSellerDtoType, VerifyOtpForRegistrationDtoType, ForgotPasswordDtoType, ResetPasswordDtoType, SendEmailForRegistrationDtoType, SellerResponseDtoType, LoginSellerDtoType } from "./../../dtos/seller.dto.ts";
+import type { UserRepositoryInterface } from "./../../interfaces/user.repository.interface.ts";
+import type { SellerRepositoryInterface } from "./../../interfaces/seller.repository.interface.ts";
 import { sendVerificationEmail } from "../../helpers/send-registration-verification-email.ts";
 import { sendResetPasswordVerificationEmail } from "../../helpers/send-reset-password-verification-email.ts";
-import { HttpError } from "../../errors/http-error.ts";
+import { HttpError } from "./../../errors/http-error.ts";
 
 
-export class BuyerAuthService {
+export class SellerAuthService {
     private userRepo: UserRepositoryInterface;
-    private buyerRepo: BuyerRepositoryInterface;
+    private sellerRepo: SellerRepositoryInterface;
 
     constructor(
         userRepo: UserRepositoryInterface,
-        buyerRepo: BuyerRepositoryInterface
+        sellerRepo: SellerRepositoryInterface
     ) {
         this.userRepo = userRepo;
-        this.buyerRepo = buyerRepo;
+        this.sellerRepo = sellerRepo;
     }
 
     private emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-    private usernameRegex = /^[a-zA-Z0-9_.]{3,20}$/;
+    private contactRegex = /^[0-9]{10}$/;
 
     private normalizeForResponse = (baseUser: any, profile: any) => {
         return {
-            _id: (profile && (baseUser.role === "buyer")) ? profile._id.toString() : profile._id,
+            _id: (profile && (baseUser.role === "seller")) ? profile._id.toString() : profile._id,
             fullName: profile.fullName ?? null,
             username: profile.username ?? null,
             contact: profile.contact ?? null,
@@ -44,24 +44,15 @@ export class BuyerAuthService {
         };
     };
 
-    createBuyer = async (buyerData: CreatedBuyerDtoType): Promise<BuyerResponseDtoType | null> => {
-        const { fullName, email, username, contact, password, terms, role } = buyerData;
+    createSeller = async (sellerData: CreatedSellerDtoType): Promise<SellerResponseDtoType | null> => {
+        const { fullName, contact, email, password, role } = sellerData;
 
         // Check existing user
         const existingUserByEmail = await this.userRepo.findUserByEmail(email);
 
-        // Check for existing username
-        const existingBuyerByUsername = await this.buyerRepo.findBuyerByUsername(username);
-        if (
-            existingBuyerByUsername &&
-            existingUserByEmail?.isVerified === true
-        ) {
-            throw new HttpError(400, "Username already exists!");
-        }
-
         // Check for existing contact number
-        const existingBuyerByContact = await this.buyerRepo.findBuyerByContact(contact);
-        if (existingBuyerByContact && existingUserByEmail?.isVerified === true) {
+        const existingSellerByContact = await this.sellerRepo.findSellerByContact(contact);
+        if (existingSellerByContact && existingUserByEmail?.isVerified === true) {
             throw new HttpError(400, "Contact already exists!");
         }
 
@@ -72,7 +63,7 @@ export class BuyerAuthService {
         expiryDate.setMinutes(expiryDate.getMinutes() + 10); // Add 10 mins from 'now'
 
         let newUser;
-        let buyerProfile;
+        let sellerProfile;
         let isNewUserCreated = false;
         let isNewProfileCreated = false;
 
@@ -93,29 +84,24 @@ export class BuyerAuthService {
                 throw new HttpError(404, "User with this id not found!");
             }
 
-            // If buyerProfile does not exist for this user, create one
-            buyerProfile = await this.buyerRepo.findBuyerById(newUser._id.toString());
+            // If sellerProfile does not exist for this user, create one
+            sellerProfile = await this.sellerRepo.findSellerById(newUser._id.toString());
 
-            if (!buyerProfile) {
-                buyerProfile = await this.buyerRepo.createBuyer({
+            if (!sellerProfile) {
+                sellerProfile = await this.sellerRepo.createSeller({
                     userId: newUser._id.toString(),
                     fullName,
-                    username,
                     contact,
-                    password: hashedPassword,
-                    terms,
                 });
 
                 isNewProfileCreated = true;
             }
             else {
                 // Update if exists
-                buyerProfile = await this.buyerRepo.updateBuyer(buyerProfile._id.toString(), {
+                sellerProfile = await this.sellerRepo.updateSeller(sellerProfile._id.toString(), {
                     fullName,
-                    username,
                     contact,
                     password: hashedPassword,
-                    terms,
                 });
             }
         }
@@ -134,20 +120,18 @@ export class BuyerAuthService {
                 throw new HttpError(404, "User with this id not found!");
             }
 
-            buyerProfile = await this.buyerRepo.createBuyer({
+            sellerProfile = await this.sellerRepo.createSeller({
                 userId: newUser._id.toString(),
                 fullName,
-                username,
                 contact,
                 password: hashedPassword,
-                terms,
             });
 
             isNewUserCreated = true;
         }
 
-        if (!buyerProfile) {
-            throw new HttpError(404, "Buyer with this id not found!");
+        if (!sellerProfile) {
+            throw new HttpError(404, "Seller with this id not found!");
         }
 
         // JWT Expiry Calculation in seconds for Signup Token
@@ -156,7 +140,7 @@ export class BuyerAuthService {
 
         // Generate Token
         const token = jwt.sign(
-            { _id: buyerProfile._id.toString(), userId: newUser._id.toString() ?? buyerProfile.userId.toString(), email: newUser.email, username: buyerProfile.username, role: newUser.role },
+            { _id: newUser._id, email: newUser.email, contact: sellerProfile.contact, role: newUser.role },
             process.env.JWT_SECRET!,
             { expiresIn: expiresInSeconds }
         );
@@ -167,7 +151,7 @@ export class BuyerAuthService {
             // Rollback user creation if email sending fails
             if (isNewUserCreated) {
                 await this.userRepo.deleteUser(newUser._id.toString());
-                await this.buyerRepo.deleteBuyer(buyerProfile._id.toString());
+                await this.sellerRepo.deleteSeller(sellerProfile._id.toString());
             }
             else {
                 // If it was an existing unverified user, clear verification fields
@@ -179,34 +163,32 @@ export class BuyerAuthService {
 
                 // If profile was updated (not new), we don't revert changes for simplicity
                 if (isNewProfileCreated) {
-                    await this.buyerRepo.deleteBuyer(buyerProfile._id.toString());
+                    await this.sellerRepo.deleteSeller(sellerProfile._id.toString());
                 }
             }
             throw new HttpError(500, emailResponse.message ?? "Failed to send verification email!");
         }
 
         newUser = await this.userRepo.updateUser(newUser._id.toString(), {
-            buyerProfile: buyerProfile._id.toString()
+            sellerProfile: sellerProfile._id.toString()
         });
 
         if (!newUser) {
             throw new HttpError(404, "User with this id not found!");
         }
 
-        const respose: BuyerResponseDtoType = {
+        const respose: SellerResponseDtoType = {
             success: true,
-            message: "User registered successfully. Please verify your email.",
+            message: "Seller registered successfully. Please verify your email.",
             status: 201,
             token,
             user: {
-                _id: buyerProfile._id.toString(),
-                userId: buyerProfile.userId.toString(),
-                fullName: buyerProfile.fullName,
-                username: buyerProfile.username,
-                contact: buyerProfile.contact,
-                profilePictureUrl: newUser.profilePictureUrl,
-                bio: buyerProfile.bio,
-                terms: buyerProfile.terms,
+                _id: sellerProfile._id.toString(),
+                userId: sellerProfile.userId.toString(),
+                fullName: sellerProfile.fullName,
+                contact: sellerProfile.contact,
+                createdAt: sellerProfile.createdAt,
+                updatedAt: sellerProfile.updatedAt,
                 baseUser: {
                     _id: newUser._id.toString(),
                     email: newUser.email,
@@ -219,74 +201,45 @@ export class BuyerAuthService {
         return respose;
     };
 
-    checkUsernameUnique = async (checkUsernameUniqueDto: CheckUsernameUniqueDtoType): Promise<BuyerResponseDtoType | null> => {
-        const { username } = checkUsernameUniqueDto;
+    verifyOtpForRegistration = async (verifyOtpForRegistrationDto: VerifyOtpForRegistrationDtoType): Promise<SellerResponseDtoType> => {
+        const { email, otp } = verifyOtpForRegistrationDto;
+        console.log(email);
 
-        const decodedUsername = decodeURIComponent(username);
-        const existingBuyer = await this.buyerRepo.findBuyerByUsername(decodedUsername);
-
-        if (!existingBuyer) {
-            const response: BuyerResponseDtoType = {
-                success: true,
-                message: "Username is available",
-                status: 200,
-            };
-            return response;
-        }
-
-        const linkedUser = await this.userRepo.findUserById(existingBuyer.userId.toString());
-        if (linkedUser && linkedUser.isVerified === true) {
-            throw new HttpError(400, "Username is already taken!");
-        }
-
-        const response: BuyerResponseDtoType = {
-            success: true,
-            message: "Username is available",
-            status: 200
-        };
-        return response;
-    };
-
-    verifyOtpForRegistration = async (verifyOtpForRegistrationDto: VerifyOtpForRegistrationDtoType): Promise<BuyerResponseDtoType> => {
-        const { username, otp } = verifyOtpForRegistrationDto;
-
-        if (!username || username.trim() === "") {
-            throw new HttpError(400, "Username is required!");
+        if (!email || email.trim() === "") {
+            throw new HttpError(400, "Email is required!");
         }
 
         if (!otp || otp.trim() === "") {
             throw new HttpError(400, "OTP is required!");
         }
 
-        const decodedUsername = decodeURIComponent(username);
-        const existingBuyerByUsername = await this.buyerRepo.findBuyerByUsername(decodedUsername);
-
-        if (!existingBuyerByUsername) {
-            throw new HttpError(404, "Buyer with this username does not exist!");
+        const existingUserByEmail = await this.userRepo.findUserByEmail(email);
+        if (!existingUserByEmail) {
+            throw new HttpError(404, "User with this email does not exist!");
         }
 
-        const existingUserById = await this.userRepo.findUserById(existingBuyerByUsername.userId.toString());
-        if (!existingUserById) {
-            throw new HttpError(404, "User with this id does not exist!");
-        }
-
-        if (existingUserById.isVerified) {
+        if (existingUserByEmail.isVerified) {
             throw new HttpError(400, "This account is already verified! Please login.");
         }
 
-        if (!existingUserById.verifyCode || !existingUserById.verifyCodeExpiryDate) {
+        if (!existingUserByEmail.verifyCode || !existingUserByEmail.verifyCodeExpiryDate) {
             throw new HttpError(400, "No OTP request found! Please request for a new OTP.");
         }
 
-        if (new Date() > existingUserById.verifyCodeExpiryDate) {
+        if (new Date() > existingUserByEmail.verifyCodeExpiryDate) {
             throw new HttpError(400, "OTP has expired! Please request for a new OTP.");
         }
 
-        if (existingUserById.verifyCode !== otp) {
+        if (existingUserByEmail.verifyCode !== otp) {
             throw new HttpError(400, "Invalid OTP! Please try again.");
         }
 
-        const updatedUser = await this.userRepo.updateUser(existingUserById._id.toString(), {
+        const existingSellerByBaseUserId = await this.sellerRepo.findSellerByBaseUserId(existingUserByEmail._id.toString());
+        if (!existingSellerByBaseUserId) {
+            throw new HttpError(404, "Seller with this id not found!");
+        }
+
+        const updatedUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
             isVerified: true,
             verifyCode: null,
             verifyCodeExpiryDate: null,
@@ -296,7 +249,7 @@ export class BuyerAuthService {
             throw new HttpError(404, "User is not updated and not found!");
         }
 
-        const response: BuyerResponseDtoType = {
+        const response: SellerResponseDtoType = {
             success: true,
             message: "Account verified successfully. You can now login.",
             status: 200,
@@ -304,8 +257,8 @@ export class BuyerAuthService {
         return response;
     };
 
-    loginBuyer = async (loginBuyerDto: LoginBuyerDtoType): Promise<BuyerResponseDtoType | null> => {
-        const { identifier, password, role } = loginBuyerDto;
+    loginSeller = async (loginSellerDto: LoginSellerDtoType): Promise<SellerResponseDtoType | null> => {
+        const { identifier, password, role } = loginSellerDto;
         if (!role) {
             throw new HttpError(400, "User role is required!");
         }
@@ -315,33 +268,33 @@ export class BuyerAuthService {
         }
 
         // Email OR Username
-        if (role === "buyer") {
+        if (role === "seller") {
             const isEmailFormat = this.emailRegex.test(identifier);
-            const isUsernameFormat = this.usernameRegex.test(identifier);
+            const isContactFormat = this.contactRegex.test(identifier);
 
-            if (!isEmailFormat && !isUsernameFormat) {
-                throw new HttpError(400, "Invalid identifier! Identifier must be a valid username or email.");
+            if (!isEmailFormat && !isContactFormat) {
+                throw new HttpError(400, "Invalid identifier! Identifier must be a valid email or phone number.");
             }
 
             let user;
-            let buyerProfile;
+            let sellerProfile;
             let expiresInSeconds;
             let token;
 
             if (isEmailFormat) {
                 user = await this.userRepo.findUserByEmail(identifier);
                 if (!user || user.role !== role) {
-                    throw new HttpError(404, "Invalid email! No buyer account found with this email.");
+                    throw new HttpError(404, "Invalid email! No seller account found with this email.");
                 }
 
-                buyerProfile = await this.buyerRepo.findBuyerByBaseUserId(user._id.toString());
-                if (!buyerProfile) {
-                    throw new HttpError(404, "Buyer user not found for this email.");
+                sellerProfile = await this.sellerRepo.findSellerByBaseUserId(user._id.toString());
+                if (!sellerProfile) {
+                    throw new HttpError(404, "Seller user not found for this email.");
                 }
 
-                const hashedPassword = buyerProfile.password;
+                const hashedPassword = sellerProfile.password;
                 if (!hashedPassword) {
-                    throw new HttpError(400, "Password not found for buyer!");
+                    throw new HttpError(400, "Password not found for seller!");
                 }
 
                 const isMatched = await bcrypt.compare(password, hashedPassword);
@@ -354,37 +307,37 @@ export class BuyerAuthService {
 
                 // Generate Token
                 token = jwt.sign(
-                    { _id: buyerProfile._id.toString(), userId: user._id.toString() ?? buyerProfile.userId.toString(), email: user.email, username: buyerProfile.username, role: user.role },
+                    { _id: sellerProfile._id.toString(), userId: user._id.toString() ?? sellerProfile.userId.toString(), email: user.email, phoneNumber: sellerProfile.contact, role: user.role },
                     process.env.JWT_SECRET!,
                     { expiresIn: expiresInSeconds }
                 );
 
-                const response: BuyerResponseDtoType = {
+                const response: SellerResponseDtoType = {
                     success: true,
-                    message: "Logged in as buyer successfully.",
+                    message: "Logged in as seller successfully.",
                     status: 200,
                     token,
-                    user: this.normalizeForResponse(user, buyerProfile)
+                    user: this.normalizeForResponse(user, sellerProfile)
                 };
                 return response;
             }
 
-            // If identifer is a username;
-            buyerProfile = await this.buyerRepo.findBuyerByUsername(identifier);
-            if (!buyerProfile) {
-                throw new HttpError(404, "Invalid username! No buyer account found with this username.");
+            // If identifer is a phone number;
+            sellerProfile = await this.sellerRepo.findSellerByContact(identifier);
+            if (!sellerProfile) {
+                throw new HttpError(404, "Invalid phone number! No seller account found with this phone number.");
             }
 
-            if (!buyerProfile.password) {
-                throw new HttpError(400, "Password not found for buyer!");
+            if (!sellerProfile.password) {
+                throw new HttpError(400, "Password not found for seller!");
             }
 
-            const isMatched = await bcrypt.compare(password, buyerProfile.password);
+            const isMatched = await bcrypt.compare(password, sellerProfile.password);
             if (!isMatched) {
                 throw new HttpError(400, "Invalid password! Please enter correct password.");
             }
 
-            user = await this.userRepo.findUserById(buyerProfile.userId.toString());
+            user = await this.userRepo.findUserById(sellerProfile.userId.toString());
             if (!user) {
                 throw new HttpError(404, "User not found!");
             }
@@ -394,17 +347,17 @@ export class BuyerAuthService {
 
             // Generate Token
             token = jwt.sign(
-                { _id: buyerProfile._id.toString(), userId: user._id.toString() ?? buyerProfile.userId.toString(), email: user.email, username: buyerProfile.username, role: user.role },
+                { _id: sellerProfile._id.toString(), userId: user._id.toString() ?? sellerProfile.userId.toString(), email: user.email, phoneNumber: sellerProfile.contact, role: user.role },
                 process.env.JWT_SECRET!,
                 { expiresIn: expiresInSeconds }
             );
 
-            const response: BuyerResponseDtoType = {
+            const response: SellerResponseDtoType = {
                 success: true,
-                message: "Logged in as buyer successfully.",
+                message: "Logged in as seller successfully.",
                 status: 200,
                 token,
-                user: this.normalizeForResponse(user, buyerProfile)
+                user: this.normalizeForResponse(user, sellerProfile)
             };
             return response;
         }
@@ -412,7 +365,7 @@ export class BuyerAuthService {
         throw new HttpError(400, "Invalid role! Role is unknown.");
     };
 
-    forgotPassword = async (forgotPasswordDto: ForgotPasswordDtoType): Promise<BuyerResponseDtoType | null> => {
+    forgotPassword = async (forgotPasswordDto: ForgotPasswordDtoType): Promise<SellerResponseDtoType | null> => {
         const { email } = forgotPasswordDto;
 
         if (!email || email.trim() === "") {
@@ -428,9 +381,9 @@ export class BuyerAuthService {
             throw new HttpError(400, "This account is not verified! Please verify your email first.");
         }
 
-        const existingBuyerByBaseUserId = await this.buyerRepo.findBuyerByBaseUserId(existingUserByEmail._id.toString());
-        if (!existingBuyerByBaseUserId) {
-            throw new HttpError(404, "Buyer with this base user id not found!");
+        const existingSellerByBaseUserId = await this.sellerRepo.findSellerByBaseUserId(existingUserByEmail._id.toString());
+        if (!existingSellerByBaseUserId) {
+            throw new HttpError(404, "Seller with this base user id not found!");
         }
 
         // send verfication email for reseting password
@@ -448,27 +401,27 @@ export class BuyerAuthService {
         }
 
         const emailResponse = await sendResetPasswordVerificationEmail(
-            existingBuyerByBaseUserId.fullName,
+            existingSellerByBaseUserId.fullName,
             email,
             otp
         );
 
         if (!emailResponse.success) {
-            throw new HttpError(500, emailResponse.message ?? "Failed to send verification email");
+            throw new HttpError(500, emailResponse.message ?? "Failed to send verification email!");
         }
 
-        const response: BuyerResponseDtoType = {
+        const response: SellerResponseDtoType = {
             success: true,
-            message: "Reset Password instructions have been sent to your email",
+            message: "Reset password instructions have been sent to your email",
             status: 200,
         };
         return response;
     };
 
-    verifyOtpForResetpassword = async (verifyOtpForResetPasswordDto: VerifyOtpForResetPasswordDtoType): Promise<BuyerResponseDtoType> => {
-        const { email, otp } = verifyOtpForResetPasswordDto;
+    resetPassword = async (resetPasswordDto: ResetPasswordDtoType): Promise<SellerResponseDtoType> => {
+        const { email, otp, newPassword } = resetPasswordDto;
 
-        if (!email || email.trim() === '') {
+        if (!email || email.trim() === "") {
             throw new HttpError(400, "Email is required!");
         }
 
@@ -476,9 +429,11 @@ export class BuyerAuthService {
             throw new HttpError(400, "OTP is required!");
         }
 
-        const decodedEmail = decodeURIComponent(email);
-        const existingUserByEmail = await this.userRepo.findUserByEmail(decodedEmail);
+        if (!newPassword || newPassword.trim() === "") {
+            throw new HttpError(400, "New password is required!");
+        }
 
+        const existingUserByEmail = await this.userRepo.findUserByEmail(email);
         if (!existingUserByEmail) {
             throw new HttpError(404, "User with this email does not exist!");
         }
@@ -495,52 +450,9 @@ export class BuyerAuthService {
             throw new HttpError(400, "Invalid OTP! Please try again.");
         }
 
-        // const updatedUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
-        //     verifyEmailResetPassword: null,
-        //     verifyEmailResetPasswordExpiryDate: null,
-        // });
-
-        // if (!updatedUser) {
-        //     throw new HttpError(404, "User is not updated and not found!");
-        // }
-
-        const response: BuyerResponseDtoType = {
-            success: true,
-            message: "Account verified successfully. You can now reset your password.",
-            status: 200,
-        };
-        return response;
-    };
-
-    resetPassword = async (resetPasswordDto: ResetPasswordDtoType): Promise<BuyerResponseDtoType> => {
-        const { email, newPassword } = resetPasswordDto;
-
-        if (!email || email.trim() === "") {
-            throw new HttpError(400, "Email is required!");
-        }
-
-        if (!newPassword || newPassword.trim() === "") {
-            throw new HttpError(400, "New password is required!");
-        }
-
-        const decodedEmail = decodeURIComponent(email);
-        const existingUserByEmail = await this.userRepo.findUserByEmail(decodedEmail);
-
-        if (!existingUserByEmail) {
-            throw new HttpError(404, "User with this email does not exist!");
-        }
-
-        if (!existingUserByEmail.verifyEmailResetPassword || !existingUserByEmail.verifyEmailResetPasswordExpiryDate) {
-            throw new HttpError(400, "No OTP request found! Please request for a new OTP.");
-        }
-
-        if (new Date() > existingUserByEmail.verifyEmailResetPasswordExpiryDate) {
-            throw new HttpError(400, "OTP has expired! Please request for a new OTP.");
-        }
-
-        const existingBuyerByBaseUserId = await this.buyerRepo.findBuyerByBaseUserId(existingUserByEmail._id.toString());
-        if (!existingBuyerByBaseUserId) {
-            throw new HttpError(404, "Buyer with this base user id not found!");
+        const existingSellerByBaseUserId = await this.sellerRepo.findSellerByBaseUserId(existingUserByEmail._id.toString());
+        if (!existingSellerByBaseUserId) {
+            throw new HttpError(404, "Seller with this base user id not found!");
         }
 
         const updatedUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
@@ -555,15 +467,15 @@ export class BuyerAuthService {
         const salt = bcrypt.genSaltSync(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-        const updatedBuyer = await this.buyerRepo.updateBuyer(existingBuyerByBaseUserId._id.toString(), {
+        const updatedSeller = await this.sellerRepo.updateSeller(existingSellerByBaseUserId._id.toString(), {
             password: hashedPassword
         });
 
-        if (!updatedBuyer) {
-            throw new HttpError(404, "Buyer is not updated and not found!");
+        if (!updatedSeller) {
+            throw new HttpError(404, "Seller is not updated and not found!");
         }
 
-        const response: BuyerResponseDtoType = {
+        const response: SellerResponseDtoType = {
             success: true,
             message: "Password reset successfully. You can now login with your new password.",
             status: 200,
@@ -571,9 +483,8 @@ export class BuyerAuthService {
         return response;
     };
 
-    handleSendEmailForRegistration = async (sendEmailForRegistrationDto: SendEmailForRegistrationDtoType): Promise<BuyerResponseDtoType> => {
+    handleSendEmailForRegistration = async (sendEmailForRegistrationDto: SendEmailForRegistrationDtoType): Promise<SellerResponseDtoType> => {
         const { email } = sendEmailForRegistrationDto;
-
         if (!email) {
             throw new HttpError(400, "Email is required!");
         }
@@ -587,9 +498,9 @@ export class BuyerAuthService {
             throw new HttpError(400, "This account is already verified! Please login.");
         }
 
-        const existingBuyerByBaseUserId = await this.buyerRepo.findBuyerByBaseUserId(existingUserByEmail._id.toString());
-        if (!existingBuyerByBaseUserId) {
-            throw new HttpError(404, "Buyer with this base user id not found!");
+        const existingSellerByBaseUserId = await this.sellerRepo.findSellerByBaseUserId(existingUserByEmail._id.toString());
+        if (!existingSellerByBaseUserId) {
+            throw new HttpError(404, "Seller with this base user id not found!");
         }
 
         // generate 6‑digit OTP and expiry date
@@ -606,38 +517,21 @@ export class BuyerAuthService {
             throw new HttpError(404, "User is not updated and not found!");
         }
 
-        const emailResponse = await sendVerificationEmail(existingBuyerByBaseUserId.fullName, email, otp);
+        const emailResponse = await sendVerificationEmail(existingSellerByBaseUserId.fullName, email, otp);
         if (!emailResponse.success) {
             throw new HttpError(500, emailResponse.message ?? "Failed to send verification email! Try again later.");
         }
 
-        const response: BuyerResponseDtoType = {
+        const response: SellerResponseDtoType = {
             success: true,
             message: emailResponse.message ?? "Verification email sent successfully. Please check your inbox.",
-            status: 200,
-            user: {
-                _id: existingBuyerByBaseUserId._id.toString(),
-                userId: existingBuyerByBaseUserId.userId.toString(),
-                fullName: existingBuyerByBaseUserId.fullName,
-                username: existingBuyerByBaseUserId.username,
-                contact: existingBuyerByBaseUserId.contact,
-                profilePictureUrl: existingUserByEmail.profilePictureUrl,
-                bio: existingBuyerByBaseUserId.bio,
-                terms: existingBuyerByBaseUserId.terms,
-                baseUser: {
-                    _id: existingUserByEmail._id.toString(),
-                    email: existingUserByEmail.email,
-                    role: existingUserByEmail.role,
-                    isVerified: existingUserByEmail.isVerified,
-                    isPermanentlyBanned: existingUserByEmail.isPermanentlyBanned,
-                }
-            }
+            status: 200
         };
         return response;
     };
 
-    logoutBuyer = async (): Promise<BuyerResponseDtoType> => {
-        const response: BuyerResponseDtoType = {
+    logoutSeller = async (): Promise<SellerResponseDtoType> => {
+        const response: SellerResponseDtoType = {
             success: true,
             message: "Logged out successfully.",
             status: 200,

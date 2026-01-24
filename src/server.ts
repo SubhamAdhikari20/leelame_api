@@ -12,6 +12,7 @@ import helmet from "helmet";
 import "colors";
 import connectDB from "./config/db.ts";
 import buyerRoute from "./routes/buyer.route.ts";
+import sellerRoute from "./routes/seller.route.ts";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -114,6 +115,8 @@ app.use(express.static(path.join(__dirname, "public"))); // Serve static files
 // Buyers Routes
 app.use("/api/v1/users/buyer/login", authLimiter);
 app.use("/api/v1/users/buyer", buyerRoute);
+app.use("/api/v1/users/seller/login", authLimiter);
+app.use("/api/v1/users/seller", sellerRoute);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
