@@ -1,23 +1,23 @@
-// src/controllers/seller-auth.controller.ts
+// src/controllers/admin-auth.controller.ts
 import type { Request, Response } from "express";
-import { SellerResponseDto, CreatedSellerDto, ForgotPasswordDto, LoginSellerDto, ResetPasswordDto, SendEmailForRegistrationDto, VerifyOtpForRegistrationDto } from "../../dtos/seller.dto.ts";
-import { SellerAuthService } from "./../../services/auth/seller-auth.service.ts";
+import { AdminResponseDto, CreatedAdminDto, ForgotPasswordDto, LoginAdminDto, ResetPasswordDto, SendEmailForRegistrationDto, VerifyOtpForRegistrationDto, VerifyOtpForResetPasswordDto } from "../../dtos/admin.dto.ts";
+import { AdminAuthService } from "../../services/auth/admin-auth.service.ts";
 import { z } from "zod";
-import { HttpError } from "./../../errors/http-error.ts";
-import asyncHandler from "./../../middleware/async.middleware.ts";
+import { HttpError } from "../../errors/http-error.ts";
+import asyncHandler from "../../middleware/async.middleware.ts";
 
 
-export class SellerAuthController {
-    private sellerAuthService: SellerAuthService;
+export class AdminAuthController {
+    private adminAuthService: AdminAuthService;
 
-    constructor(sellerAuthService: SellerAuthService) {
-        this.sellerAuthService = sellerAuthService;
+    constructor(adminAuthService: AdminAuthService) {
+        this.adminAuthService = adminAuthService;
     }
 
-    createSeller = asyncHandler(async (req: Request, res: Response) => {
+    createAdmin = asyncHandler(async (req: Request, res: Response) => {
         try {
             const body = await req.body;
-            const validatedData = CreatedSellerDto.safeParse(body);
+            const validatedData = CreatedAdminDto.safeParse(body);
 
             if (!validatedData.success) {
                 return res.status(400).json({
@@ -26,13 +26,13 @@ export class SellerAuthController {
                 });
             }
 
-            const result = await this.sellerAuthService.createSeller(validatedData.data);
+            const result = await this.adminAuthService.createAdmin(validatedData.data);
 
-            const validatedResponseSellerData = SellerResponseDto.safeParse(result?.user);
-            if (!validatedResponseSellerData.success) {
+            const validatedResponseAdminData = AdminResponseDto.safeParse(result?.user);
+            if (!validatedResponseAdminData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseSellerData.error)
+                    message: z.prettifyError(validatedResponseAdminData.error)
                 });
             }
 
@@ -40,11 +40,11 @@ export class SellerAuthController {
                 success: result?.success,
                 message: result?.message,
                 token: result?.token,
-                user: validatedResponseSellerData.data,
+                user: validatedResponseAdminData.data,
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller signup controller:", error);
+            console.error("Error in admin signup controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -72,7 +72,7 @@ export class SellerAuthController {
                 });
             }
 
-            const result = await this.sellerAuthService.verifyOtpForRegistration(validatedData.data);
+            const result = await this.adminAuthService.verifyOtpForRegistration(validatedData.data);
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
@@ -80,7 +80,7 @@ export class SellerAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller verify otp for registration controller:", error);
+            console.error("Error in admin verify otp for registration controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -96,10 +96,10 @@ export class SellerAuthController {
         }
     });
 
-    loginSeller = asyncHandler(async (req: Request, res: Response) => {
+    loginAdmin = asyncHandler(async (req: Request, res: Response) => {
         try {
             const body = await req.body;
-            const validatedData = LoginSellerDto.safeParse(body);
+            const validatedData = LoginAdminDto.safeParse(body);
 
             if (!validatedData.success) {
                 return res.status(400).json({
@@ -108,13 +108,13 @@ export class SellerAuthController {
                 });
             }
 
-            const result = await this.sellerAuthService.loginSeller(validatedData.data);
+            const result = await this.adminAuthService.loginAdmin(validatedData.data);
 
-            const validatedResponseSellerData = SellerResponseDto.safeParse(result?.user);
-            if (!validatedResponseSellerData.success) {
+            const validatedResponseAdminData = AdminResponseDto.safeParse(result?.user);
+            if (!validatedResponseAdminData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseSellerData.error)
+                    message: z.prettifyError(validatedResponseAdminData.error)
                 });
             }
 
@@ -122,11 +122,11 @@ export class SellerAuthController {
                 success: result?.success,
                 message: result?.message,
                 token: result?.token,
-                user: validatedResponseSellerData.data,
+                user: validatedResponseAdminData.data,
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller signup controller:", error);
+            console.error("Error in admin signup controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -154,7 +154,7 @@ export class SellerAuthController {
                 });
             }
 
-            const result = await this.sellerAuthService.forgotPassword(validatedData.data);
+            const result = await this.adminAuthService.forgotPassword(validatedData.data);
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
@@ -162,7 +162,43 @@ export class SellerAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller forgot password controller:", error);
+            console.error("Error in admin forgot password controller:", error);
+
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
+    verifyOtpForResetPassword = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const body = await req.body;
+            const validatedData = VerifyOtpForResetPasswordDto.safeParse(body);
+
+            if (!validatedData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedData.error)
+                });
+            }
+
+            const result = await this.adminAuthService.verifyOtpForResetpassword(validatedData.data);
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+            });
+        }
+        catch (error: Error | any) {
+            console.error("Error in admin verify otp for reset password controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -190,7 +226,7 @@ export class SellerAuthController {
                 });
             }
 
-            const result = await this.sellerAuthService.resetPassword(validatedData.data);
+            const result = await this.adminAuthService.resetPassword(validatedData.data);
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
@@ -198,7 +234,7 @@ export class SellerAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller reset password controller:", error);
+            console.error("Error in admin reset password controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -226,24 +262,24 @@ export class SellerAuthController {
                 });
             }
 
-            const result = await this.sellerAuthService.handleSendEmailForRegistration(validatedData.data);
+            const result = await this.adminAuthService.handleSendEmailForRegistration(validatedData.data);
 
-            const validatedResponseSellerData = SellerResponseDto.safeParse(result?.user);
-            if (!validatedResponseSellerData.success) {
+            const validatedResponseAdminData = AdminResponseDto.safeParse(result?.user);
+            if (!validatedResponseAdminData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseSellerData.error)
+                    message: z.prettifyError(validatedResponseAdminData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                user: validatedResponseSellerData.data,
+                user: validatedResponseAdminData.data,
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller send verication email controller:", error);
+            console.error("Error in admin send verication email controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -259,9 +295,9 @@ export class SellerAuthController {
         }
     });
 
-    logoutSeller = asyncHandler(async (req: Request, res: Response) => {
+    logoutAdmin = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const result = await this.sellerAuthService.logoutSeller();
+            const result = await this.adminAuthService.logoutAdmin();
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
@@ -269,7 +305,7 @@ export class SellerAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller logout controller:", error);
+            console.error("Error in admin logout controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({

@@ -500,4 +500,13 @@ export class AdminAuthService {
         };
         return response;
     };
+
+    logoutAdmin = async (): Promise<AdminResponseDtoType> => {
+        const response: AdminResponseDtoType = {
+            success: true,
+            message: "Logged out successfully.",
+            status: 200,
+        };
+        return response;
+    };
 }

@@ -31,9 +31,10 @@ router.put("/send-verification-email-registration", sellerAuthController.handleS
 router.put("/forgot-password", sellerAuthController.forgotPassword);
 router.put("/reset-password", sellerAuthController.resetPassword);
 
-router.get("/logout", sellerAuthController.logoutSeller);
+router.get("/logout", sellerAuthMiddleware.protect, sellerAuthController.logoutSeller);
 
 // Seller Other CRUDs
+router.get("/:id", sellerAuthMiddleware.protect, sellerController.getSellerById);
 router.get("/:email", sellerAuthMiddleware.protect, sellerController.getSellerByEmail);
 // router.get("/:id", getStudentById);
 

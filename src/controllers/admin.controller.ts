@@ -1,23 +1,23 @@
-// src/controllers/buyer.controller.ts
+// src/controllers/admin.controller.ts
 import type { Request, Response } from "express";
-import { BuyerResponseDto, GetBuyerByEmailDto, GetBuyerByIdDto, GetCurrentBuyerDto } from "./../dtos/buyer.dto.ts";
-import { BuyerService } from "./../services/buyer.service.ts";
+import { AdminResponseDto, GetAdminByEmailDto, GetAdminByIdDto, GetCurrentAdminDto } from "./../dtos/admin.dto.ts";
+import { AdminService } from "./../services/admin.service.ts";
 import { z } from "zod";
 import { HttpError } from "./../errors/http-error.ts";
 import asyncHandler from "./../middleware/async.middleware.ts";
 
 
-export class BuyerController {
-    private buyerService: BuyerService;
+export class AdminController {
+    private adminService: AdminService;
 
-    constructor(buyerService: BuyerService) {
-        this.buyerService = buyerService;
+    constructor(adminService: AdminService) {
+        this.adminService = adminService;
     }
 
-    getCurrentBuyer = asyncHandler(async (req: Request, res: Response) => {
+    getCurrentAdmin = asyncHandler(async (req: Request, res: Response) => {
         try {
             const body = await req.params;
-            const validatedData = GetCurrentBuyerDto.safeParse(body);
+            const validatedData = GetCurrentAdminDto.safeParse(body);
 
             if (!validatedData.success) {
                 return res.status(400).json({
@@ -26,24 +26,24 @@ export class BuyerController {
                 });
             }
 
-            const result = await this.buyerService.getCurrentBuyerUser(validatedData.data);
+            const result = await this.adminService.getCurrentAdminUser(validatedData.data);
 
-            const validatedResponseBuyerData = BuyerResponseDto.safeParse(result?.user);
-            if (!validatedResponseBuyerData.success) {
+            const validatedResponseAdminData = AdminResponseDto.safeParse(result?.user);
+            if (!validatedResponseAdminData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseBuyerData.error)
+                    message: z.prettifyError(validatedResponseAdminData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                user: validatedResponseBuyerData.data,
+                user: validatedResponseAdminData.data,
             });
         }
         catch (error: Error | any) {
-            console.error("Error in fetching buyer data controller:", error);
+            console.error("Error in fetching admin data controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -59,10 +59,10 @@ export class BuyerController {
         }
     });
 
-    getBuyerByEmail = asyncHandler(async (req: Request, res: Response) => {
+    getAdminByEmail = asyncHandler(async (req: Request, res: Response) => {
         try {
             const body = await req.params;
-            const validatedData = GetBuyerByEmailDto.safeParse(body);
+            const validatedData = GetAdminByEmailDto.safeParse(body);
 
             if (!validatedData.success) {
                 return res.status(400).json({
@@ -71,24 +71,24 @@ export class BuyerController {
                 });
             }
 
-            const result = await this.buyerService.getBuyerByEmail(validatedData.data);
+            const result = await this.adminService.getAdminByEmail(validatedData.data);
 
-            const validatedResponseBuyerData = BuyerResponseDto.safeParse(result?.user);
-            if (!validatedResponseBuyerData.success) {
+            const validatedResponseAdminData = AdminResponseDto.safeParse(result?.user);
+            if (!validatedResponseAdminData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseBuyerData.error)
+                    message: z.prettifyError(validatedResponseAdminData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                user: validatedResponseBuyerData.data,
+                user: validatedResponseAdminData.data,
             });
         }
         catch (error: Error | any) {
-            console.error("Error in fetching buyer data controller:", error);
+            console.error("Error in fetching admin data controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -104,10 +104,10 @@ export class BuyerController {
         }
     });
 
-    getBuyerById = asyncHandler(async (req: Request, res: Response) => {
+    getAdminById = asyncHandler(async (req: Request, res: Response) => {
         try {
             const body = await req.params;
-            const validatedData = GetBuyerByIdDto.safeParse(body);
+            const validatedData = GetAdminByIdDto.safeParse(body);
 
             if (!validatedData.success) {
                 return res.status(400).json({
@@ -116,24 +116,24 @@ export class BuyerController {
                 });
             }
 
-            const result = await this.buyerService.getBuyerById(validatedData.data);
+            const result = await this.adminService.getAdminById(validatedData.data);
 
-            const validatedResponseBuyerData = BuyerResponseDto.safeParse(result?.user);
-            if (!validatedResponseBuyerData.success) {
+            const validatedResponseAdminData = AdminResponseDto.safeParse(result?.user);
+            if (!validatedResponseAdminData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseBuyerData.error)
+                    message: z.prettifyError(validatedResponseAdminData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                user: validatedResponseBuyerData.data,
+                user: validatedResponseAdminData.data,
             });
         }
         catch (error: Error | any) {
-            console.error("Error in fetching buyer data controller:", error);
+            console.error("Error in fetching admin data controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({

@@ -1,5 +1,5 @@
 // src/services/admin.service.ts
-import type { AdminResponseDtoType, GetAdminByEmailDtoType, GetAdminByIdType } from "./../dtos/admin.dto.ts";
+import type { AdminResponseDtoType, GetAdminByEmailDtoType, GetAdminByIdType, GetCurrentAdminDtoType } from "./../dtos/admin.dto.ts";
 import type { AdminRepositoryInterface } from "./../interfaces/admin.repository.interface.ts";
 import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
@@ -17,8 +17,10 @@ export class AdminService {
         this.adminRepo = adminRepo;
     }
 
-    getCurrentAdminUser = async (adminId: string): Promise<AdminResponseDtoType> => {
-        const existingAdminById = await this.adminRepo.findAdminById(adminId);
+    getCurrentAdminUser = async (getCurrentAdminDto: GetCurrentAdminDtoType): Promise<AdminResponseDtoType> => {
+        const { id } = getCurrentAdminDto;
+
+        const existingAdminById = await this.adminRepo.findAdminById(id);
         if (!existingAdminById) {
             throw new HttpError(404, "Admin with this id not found!");
         }

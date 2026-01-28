@@ -64,6 +64,12 @@ export const GetAdminByEmailDto = z.object({
 });
 export type GetAdminByEmailDtoType = z.infer<typeof GetAdminByEmailDto>;
 
+// Get Current Admin DTO
+export const GetCurrentAdminDto = z.object({
+    id: z.string()
+});
+export type GetCurrentAdminDtoType = z.infer<typeof GetCurrentAdminDto>;
+
 // Get Admin By Id DTO
 export const GetAdminByIdDto = z.object({
     id: z.string()

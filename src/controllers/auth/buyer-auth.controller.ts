@@ -16,7 +16,7 @@ export class BuyerAuthController {
 
     createBuyer = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const body = req.body;
+            const body = await req.body;
             const validatedData = CreatedBuyerDto.safeParse(body);
 
             if (!validatedData.success) {
@@ -62,7 +62,8 @@ export class BuyerAuthController {
 
     checkUsernameUnique = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const { searchParams } = new URL(req.url);
+            const url = await req.url;
+            const { searchParams } = new URL(url);
             const queryParam = {
                 username: searchParams.get("username")
             };
@@ -112,7 +113,7 @@ export class BuyerAuthController {
 
     verifyOtpForRegistration = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const body = req.body;
+            const body = await req.body;
             const validatedData = VerifyOtpForRegistrationDto.safeParse(body);
 
             if (!validatedData.success) {
@@ -148,7 +149,7 @@ export class BuyerAuthController {
 
     loginBuyer = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const body = req.body;
+            const body = await req.body;
             const validatedData = LoginBuyerDto.safeParse(body);
 
             if (!validatedData.success) {
@@ -194,7 +195,7 @@ export class BuyerAuthController {
 
     forgotPassword = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const body = req.body;
+            const body = await req.body;
             const validatedData = ForgotPasswordDto.safeParse(body);
 
             if (!validatedData.success) {
@@ -230,7 +231,7 @@ export class BuyerAuthController {
 
     verifyOtpForResetPassword = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const body = req.body;
+            const body = await req.body;
             const validatedData = VerifyOtpForResetPasswordDto.safeParse(body);
 
             if (!validatedData.success) {
@@ -266,7 +267,7 @@ export class BuyerAuthController {
 
     resetPassword = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const body = req.body;
+            const body = await req.body;
             const validatedData = ResetPasswordDto.safeParse(body);
 
             if (!validatedData.success) {
@@ -302,7 +303,7 @@ export class BuyerAuthController {
 
     handleSendEmailForRegistration = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const body = req.body;
+            const body = await req.body;
             const validatedData = SendEmailForRegistrationDto.safeParse(body);
 
             if (!validatedData.success) {

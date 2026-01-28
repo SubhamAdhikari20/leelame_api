@@ -1,5 +1,5 @@
 // src/services/buyer.service.ts
-import type { BuyerResponseDtoType, GetBuyerByEmailDtoType, GetBuyerByIdType } from "./../dtos/buyer.dto.ts";
+import type { BuyerResponseDtoType, GetBuyerByEmailDtoType, GetBuyerByIdType, GetCurrentBuyerDtoType } from "./../dtos/buyer.dto.ts";
 import type { BuyerRepositoryInterface } from "./../interfaces/buyer.repository.interface.ts";
 import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
@@ -17,8 +17,10 @@ export class BuyerService {
         this.buyerRepo = buyerRepo;
     }
 
-    getCurrentBuyerUser = async (buyerId: string): Promise<BuyerResponseDtoType> => {
-        const existingBuyerById = await this.buyerRepo.findBuyerById(buyerId);
+    getCurrentBuyerUser = async (getCurrentBuyerDto: GetCurrentBuyerDtoType): Promise<BuyerResponseDtoType> => {
+        const { id } = getCurrentBuyerDto;
+
+        const existingBuyerById = await this.buyerRepo.findBuyerById(id);
         if (!existingBuyerById) {
             throw new HttpError(404, "Buyer with this id not found!");
         }

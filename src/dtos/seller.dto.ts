@@ -59,6 +59,12 @@ export const GetSellerByEmailDto = z.object({
 });
 export type GetSellerByEmailDtoType = z.infer<typeof GetSellerByEmailDto>;
 
+// Get Current Seller DTO
+export const GetCurrentSellerDto = z.object({
+    id: z.string()
+});
+export type GetCurrentSellerDtoType = z.infer<typeof GetCurrentSellerDto>;
+
 // Get Seller By Id DTO
 export const GetSellerByIdDto = z.object({
     id: z.string()

@@ -2,10 +2,11 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import type { JwtPayload } from "jsonwebtoken";
+import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
+import type { BuyerRepositoryInterface } from "./../interfaces/buyer.repository.interface.ts";
+import type { SellerRepositoryInterface } from "./../interfaces/seller.repository.interface.ts";
+import type { AdminRepositoryInterface } from "./../interfaces/admin.repository.interface.ts";
 import asyncHandler from "./async.middleware.ts";
-import type { UserRepositoryInterface } from "@/interfaces/user.repository.interface.ts";
-import type { BuyerRepositoryInterface } from "@/interfaces/buyer.repository.interface.ts";
-import type { SellerRepositoryInterface } from "@/interfaces/seller.repository.interface.ts";
 
 
 declare global {
@@ -17,7 +18,7 @@ declare global {
 }
 
 //Protect the buyer middleware
-export class AuthMiddleware {
+export class BuyerAuthMiddleware {
     private userRepo: UserRepositoryInterface;
     private buyerRepo: BuyerRepositoryInterface;
 
@@ -140,6 +141,76 @@ export class SellerAuthMiddleware {
             }
 
             req.user = await this.sellerRepo.findSellerById(decoded._id.toString());
+            if (!req.user) {
+                return res.status(404).json({ message: "Buyer with this id not found!" });
+            }
+
+            next();
+        } catch (err) {
+            return res.status(401).json({ message: "Not authorized to access this route" });
+        }
+    });
+
+    authorize = (...roles: string[]) => {
+        return (req: Request, res: Response, next: NextFunction) => {
+            if (!roles.includes(req.user.role)) {
+                return res.status(403).json({
+                    message: `User role ${req.user.roles} is not authorized to access this route`,
+                });
+            }
+            next();
+        };
+    };
+}
+
+//Protect the admin middleware
+export class AdminAuthMiddleware {
+    private userRepo: UserRepositoryInterface;
+    private adminRepo: AdminRepositoryInterface;
+
+    constructor(userRepo: UserRepositoryInterface, adminRepo: AdminRepositoryInterface) {
+        this.userRepo = userRepo;
+        this.adminRepo = adminRepo;
+    }
+
+    //Protect routes
+    protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        let token;
+
+        if (
+            req.headers.authorization &&
+            req.headers.authorization.startsWith("Bearer")
+        ) {
+            token = req.headers.authorization.split(" ")[1];
+        }
+
+        //Make sure token exist
+        if (!token) {
+            // return next(new HttpError(401, 'Not authorized to access this route'));
+            return res.status(401).json({ message: "Not authorized to access this route" });
+        }
+
+        try {
+            //Verify token
+            const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+            if (!decoded) {
+                return res.status(400).json({ message: "JWT Error! The token is not decoded." });
+            }
+
+            if (decoded.role && decoded.role === "admin") {
+                return res.status(400).json({ message: "Invalid role! Role should be 'admin'." });
+            }
+
+            const baseUser = await this.userRepo.findUserById(decoded.userId.toString());
+            if (!baseUser) {
+                return res.status(404).json({ message: "Base user with this id not found!" });
+            }
+
+            if ((decoded.role !== baseUser.role)) {
+                return res.status(400).json({ message: "Role Error! The role is mismatched with the fetched base user." });
+            }
+
+            req.user = await this.adminRepo.findAdminById(decoded._id.toString());
             if (!req.user) {
                 return res.status(404).json({ message: "Buyer with this id not found!" });
             }

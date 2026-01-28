@@ -1,5 +1,5 @@
 // src/services/existingSellerByBaseUserId.service.ts
-import type { SellerResponseDtoType, GetSellerByEmailDtoType, GetSellerByIdType } from "./../dtos/seller.dto.ts";
+import type { SellerResponseDtoType, GetSellerByEmailDtoType, GetSellerByIdType, GetCurrentSellerDtoType } from "./../dtos/seller.dto.ts";
 import type { SellerRepositoryInterface } from "./../interfaces/seller.repository.interface.ts";
 import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
@@ -17,8 +17,10 @@ export class SellerService {
         this.existingSellerByBaseUserIdRepo = existingSellerByBaseUserIdRepo;
     }
 
-    getCurrentSellerUser = async (userId: string): Promise<SellerResponseDtoType> => {
-        const existingSellerById = await this.existingSellerByBaseUserIdRepo.findSellerById(userId);
+    getCurrentSellerUser = async (getCurrentSellerDto: GetCurrentSellerDtoType): Promise<SellerResponseDtoType> => {
+        const { id } = getCurrentSellerDto;
+
+        const existingSellerById = await this.existingSellerByBaseUserIdRepo.findSellerById(id);
         if (!existingSellerById) {
             throw new HttpError(404, "Seller with this id not found!");
         }
