@@ -32,12 +32,14 @@ router.put("/forgot-password", adminAuthController.forgotPassword);
 router.put("/verify-account/reset-password", adminAuthController.verifyOtpForResetPassword);
 router.put("/reset-password", adminAuthController.resetPassword);
 
-
 router.get("/logout", adminAuthMiddleware.protect, adminAuthController.logoutAdmin);
 
 // Admin Other CRUDs
-router.get("/:id", adminAuthMiddleware.protect, adminController.getAdminById);
-router.get("/:email", adminAuthMiddleware.protect, adminController.getAdminByEmail);
-// router.get("/:id", getStudentById);
+router.get("/:id", adminAuthMiddleware.protect, adminController.getCurrentAdmin);
+router.put("/update-profile-details/:id", adminAuthMiddleware.protect, adminController.updateAdminProfileDetails);
+router.put("/upload-profile-picture/:id", adminAuthMiddleware.protect, adminController.uploadProfilePicture);
+router.delete("/delete-account/:id", adminAuthMiddleware.protect, adminController.deleteAdminAccount);
+
+// router.get("/:email", adminAuthMiddleware.protect, adminController.getAdminByEmail);
 
 export default router;

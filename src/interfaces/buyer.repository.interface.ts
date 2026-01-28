@@ -5,7 +5,7 @@ import type { Buyer, BuyerDocument, ProviderBuyer } from "./../types/buyer.type.
 export interface BuyerRepositoryInterface {
     createBuyer(buyer: Buyer): Promise<BuyerDocument | null>;
     updateBuyer(id: string, buyer: Partial<Buyer>): Promise<BuyerDocument | null>;
-    deleteBuyer(id: string): Promise<void | null>;
+    deleteBuyer(id: string): Promise<Boolean>;
     findBuyerById(id: string): Promise<BuyerDocument | null>;
     findBuyerByBaseUserId(baseUserId: string): Promise<BuyerDocument | null>;
     findBuyerByEmail(email: string): Promise<BuyerDocument | null>;

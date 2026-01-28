@@ -13,6 +13,7 @@ import "colors";
 import connectDB from "./config/db.ts";
 import buyerRoute from "./routes/buyer.route.ts";
 import sellerRoute from "./routes/seller.route.ts";
+import adminRoute from "./routes/admin.route.ts";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -113,10 +114,12 @@ app.use(express.static(path.join(__dirname, "public"))); // Serve static files
 
 // ---------------------------- Users Routes -------------------------------
 // Buyers Routes
-app.use("/api/v1/users/buyer/login", authLimiter);
-app.use("/api/v1/users/buyer", buyerRoute);
-app.use("/api/v1/users/seller/login", authLimiter);
-app.use("/api/v1/users/seller", sellerRoute);
+app.use("/api/users/buyer/login", authLimiter);
+app.use("/api/users/buyer", buyerRoute);
+app.use("/api/users/seller/login", authLimiter);
+app.use("/api/users/seller", sellerRoute);
+app.use("/api/users/admin/login", authLimiter);
+app.use("/api/users/admin", adminRoute);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {

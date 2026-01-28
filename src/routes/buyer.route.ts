@@ -33,12 +33,14 @@ router.put("/forgot-password", buyerAuthController.forgotPassword);
 router.put("/verify-account/reset-password", buyerAuthController.verifyOtpForResetPassword);
 router.put("/reset-password", buyerAuthController.resetPassword);
 
-
 router.get("/logout", buyerAuthMiddleware.protect, buyerAuthController.logoutBuyer);
 
 // Buyer Other CRUDs
 router.get("/:id", buyerAuthMiddleware.protect, buyerController.getCurrentBuyer);
-router.get("/:email", buyerAuthMiddleware.protect, buyerController.getBuyerByEmail);
-// router.get("/:id", getStudentById);
+router.put("/update-profile-details/:id", buyerAuthMiddleware.protect, buyerController.updateBuyerProfileDetails);
+router.put("/upload-profile-picture/:id", buyerAuthMiddleware.protect, buyerController.uploadProfilePicture);
+router.delete("/delete-account/:id", buyerAuthMiddleware.protect, buyerController.deleteBuyerAccount);
+
+// router.get("/:email", buyerAuthMiddleware.protect, buyerController.getBuyerByEmail);
 
 export default router;

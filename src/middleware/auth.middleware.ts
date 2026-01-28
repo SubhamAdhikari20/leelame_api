@@ -7,12 +7,25 @@ import type { BuyerRepositoryInterface } from "./../interfaces/buyer.repository.
 import type { SellerRepositoryInterface } from "./../interfaces/seller.repository.interface.ts";
 import type { AdminRepositoryInterface } from "./../interfaces/admin.repository.interface.ts";
 import asyncHandler from "./async.middleware.ts";
+import { HttpError } from "./../errors/http-error.ts";
 
+
+type User = {
+    _id: string;
+    email: string;
+    role: string;
+    isVerified: boolean;
+    baseUserId: string;
+    fullName: string;
+    username?: string | null;
+    contact?: string | null;
+    isPermanentlyBanned: boolean;
+};
 
 declare global {
     namespace Express {
         interface Request {
-            user?: any;
+            user?: Record<string, any> | User | null;
         }
     }
 }
@@ -40,40 +53,40 @@ export class BuyerAuthMiddleware {
         }
 
         //Make sure token exist
-        if (!token) {
-            // return next(new HttpError(401, 'Not authorized to access this route'));
-            return res.status(401).json({ message: "Not authorized to access this route" });
+        if (!token || token === "") {
+            throw new HttpError(401, "Not authorized to access this route");
         }
 
         try {
             //Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
             if (!decoded) {
-                return res.status(400).json({ message: "JWT Error! The token is not decoded." });
+                throw new HttpError(400, "JWT Error! The token is not decoded.");
             }
 
             if (decoded.role && decoded.role === "buyer") {
-                return res.status(400).json({ message: "Invalid role! Role should be 'buyer'." });
+                throw new HttpError(400, "Invalid role! Role should be 'buyer'.");
             }
 
-            const baseUser = await this.userRepo.findUserById(decoded.userId.toString());
+            const baseUser = await this.userRepo.findUserById(decoded.baseUserId.toString());
             if (!baseUser) {
-                return res.status(404).json({ message: "Base user with this id not found!" });
+                throw new HttpError(404, "Base user with this id not found!");
             }
 
             if ((decoded.role !== baseUser.role)) {
-                return res.status(400).json({ message: "Role Error! The role is mismatched with the fetched base user." });
+                throw new HttpError(400, "Role Error! The role is mismatched with the fetched base user.");
             }
 
-            req.user = await this.buyerRepo.findBuyerById(decoded._id.toString());
-            if (!req.user) {
-                return res.status(404).json({ message: "Buyer with this id not found!" });
+            const buyer = await this.buyerRepo.findBuyerById(decoded._id.toString());
+            if (!buyer) {
+                throw new HttpError(401, "Unauthorized buyer with this id not found!");
             }
 
+            req.user = buyer;
             next();
-        } catch (err) {
-            // return next(new HttpError(401, 'Not authorized to access this route'));
-            return res.status(401).json({ message: "Not authorized to access this route" });
+        }
+        catch (error: Error | any) {
+            return res.status(error.statusCode || 500).json({ success: false, message: error.message ?? "Not authorized to access this route!" });
         }
     });
 
@@ -82,10 +95,9 @@ export class BuyerAuthMiddleware {
         return (req: Request, res: Response, next: NextFunction) => {
             ///check if it is admin or publisher. user cannot access
             //  console.log(req.user.role);
-            if (!roles.includes(req.user.role)) {
-                // return next(new HttpError(403, `User role ${req.user.roles} is not authorized to access this route`));
+            if (!roles.includes(req.user?.role)) {
                 return res.status(403).json({
-                    message: `User role ${req.user.roles} is not authorized to access this route`,
+                    message: `User role ${req.user?.role} is not authorized to access this route!`,
                 });
             }
             next();
@@ -115,47 +127,47 @@ export class SellerAuthMiddleware {
         }
 
         //Make sure token exist
-        if (!token) {
-            // return next(new HttpError(401, 'Not authorized to access this route'));
-            return res.status(401).json({ message: "Not authorized to access this route" });
+        if (!token || token === "") {
+            throw new HttpError(401, "Not authorized to access this route");
         }
 
         try {
             //Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
             if (!decoded) {
-                return res.status(400).json({ message: "JWT Error! The token is not decoded." });
+                throw new HttpError(400, "JWT Error! The token is not decoded.");
             }
 
             if (decoded.role && decoded.role === "seller") {
-                return res.status(400).json({ message: "Invalid role! Role should be 'seller'." });
+                throw new HttpError(400, "Invalid role! Role should be 'seller'.");
             }
 
-            const baseUser = await this.userRepo.findUserById(decoded.userId.toString());
+            const baseUser = await this.userRepo.findUserById(decoded.baseUserId.toString());
             if (!baseUser) {
-                return res.status(404).json({ message: "Base user with this id not found!" });
+                throw new HttpError(404, "Base user with this id not found!");
             }
 
             if ((decoded.role !== baseUser.role)) {
-                return res.status(400).json({ message: "Role Error! The role is mismatched with the fetched base user." });
+                throw new HttpError(400, "Role Error! The role is mismatched with the fetched base user.");
             }
 
-            req.user = await this.sellerRepo.findSellerById(decoded._id.toString());
-            if (!req.user) {
-                return res.status(404).json({ message: "Buyer with this id not found!" });
+            const seller = await this.sellerRepo.findSellerById(decoded._id.toString());
+            if (!seller) {
+                throw new HttpError(401, "Unauthorized seller with this id not found!");
             }
 
+            req.user = seller;
             next();
         } catch (err) {
-            return res.status(401).json({ message: "Not authorized to access this route" });
+            return res.status(401).json({ message: "Not authorized to access this route!" });
         }
     });
 
     authorize = (...roles: string[]) => {
         return (req: Request, res: Response, next: NextFunction) => {
-            if (!roles.includes(req.user.role)) {
+            if (!roles.includes(req.user?.role)) {
                 return res.status(403).json({
-                    message: `User role ${req.user.roles} is not authorized to access this route`,
+                    message: `User role ${req.user?.role} is not authorized to access this route!`,
                 });
             }
             next();
@@ -185,47 +197,47 @@ export class AdminAuthMiddleware {
         }
 
         //Make sure token exist
-        if (!token) {
-            // return next(new HttpError(401, 'Not authorized to access this route'));
-            return res.status(401).json({ message: "Not authorized to access this route" });
+        if (!token || token === "") {
+            throw new HttpError(401, "Not authorized to access this route");
         }
 
         try {
             //Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
             if (!decoded) {
-                return res.status(400).json({ message: "JWT Error! The token is not decoded." });
+                throw new HttpError(400, "JWT Error! The token is not decoded.");
             }
 
             if (decoded.role && decoded.role === "admin") {
-                return res.status(400).json({ message: "Invalid role! Role should be 'admin'." });
+                throw new HttpError(400, "Invalid role! Role should be 'admin'.");
             }
 
-            const baseUser = await this.userRepo.findUserById(decoded.userId.toString());
+            const baseUser = await this.userRepo.findUserById(decoded.baseUserId.toString());
             if (!baseUser) {
-                return res.status(404).json({ message: "Base user with this id not found!" });
+                throw new HttpError(404, "Base user with this id not found!");
             }
 
             if ((decoded.role !== baseUser.role)) {
-                return res.status(400).json({ message: "Role Error! The role is mismatched with the fetched base user." });
+                throw new HttpError(400, "Role Error! The role is mismatched with the fetched base user.");
             }
 
-            req.user = await this.adminRepo.findAdminById(decoded._id.toString());
-            if (!req.user) {
-                return res.status(404).json({ message: "Buyer with this id not found!" });
+            const admin = await this.adminRepo.findAdminById(decoded._id.toString());
+            if (!admin) {
+                throw new HttpError(401, "Unauthorized admin with this id not found!");
             }
 
+            req.user = admin;
             next();
         } catch (err) {
-            return res.status(401).json({ message: "Not authorized to access this route" });
+            return res.status(401).json({ message: "Not authorized to access this route!" });
         }
     });
 
     authorize = (...roles: string[]) => {
         return (req: Request, res: Response, next: NextFunction) => {
-            if (!roles.includes(req.user.role)) {
+            if (!roles.includes(req.user?.role)) {
                 return res.status(403).json({
-                    message: `User role ${req.user.roles} is not authorized to access this route`,
+                    message: `User role ${req.user?.role} is not authorized to access this route!`,
                 });
             }
             next();

@@ -34,8 +34,11 @@ router.put("/reset-password", sellerAuthController.resetPassword);
 router.get("/logout", sellerAuthMiddleware.protect, sellerAuthController.logoutSeller);
 
 // Seller Other CRUDs
-router.get("/:id", sellerAuthMiddleware.protect, sellerController.getSellerById);
-router.get("/:email", sellerAuthMiddleware.protect, sellerController.getSellerByEmail);
-// router.get("/:id", getStudentById);
+router.get("/:id", sellerAuthMiddleware.protect, sellerController.getCurrentSeller);
+router.put("/update-profile-details/:id", sellerAuthMiddleware.protect, sellerController.updateSellerProfileDetails);
+router.put("/upload-profile-picture/:id", sellerAuthMiddleware.protect, sellerController.uploadProfilePicture);
+router.delete("/delete-account/:id", sellerAuthMiddleware.protect, sellerController.deleteSellerAccount);
+
+// router.get("/:email", sellerAuthMiddleware.protect, sellerController.getSellerByEmail);
 
 export default router;

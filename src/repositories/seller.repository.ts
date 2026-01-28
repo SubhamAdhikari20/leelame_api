@@ -16,8 +16,22 @@ export class SellerRepository implements SellerRepositoryInterface {
         return updatedSeller;
     };
 
-    deleteSeller = async (id: string): Promise<void | null> => {
+    deleteSeller = async (id: string): Promise<Boolean> => {
+        const seller = await this.findSellerById(id);
+        if (!seller) {
+            return false;
+        }
+        
         await SellerModel.findByIdAndDelete(id);
+        await UserModel.findByIdAndDelete(seller.baseUserId.toString());
+
+        const deletedSeller = await this.findSellerById(id);
+        const deletedBaseUser = await UserModel.findById(seller.baseUserId.toString()).lean();
+
+        if (deletedSeller || deletedBaseUser) {
+            return false;
+        }
+        return true;
     };
 
     findSellerById = async (id: string): Promise<SellerDocument | null> => {
@@ -35,8 +49,8 @@ export class SellerRepository implements SellerRepositoryInterface {
         if (!baseUser) {
             return null;
         }
-        const buyer = await this.findSellerByBaseUserId(baseUser._id.toString());
-        return buyer;
+        const seller = await this.findSellerByBaseUserId(baseUser._id.toString());
+        return seller;
     };
 
     findSellerByContact = async (contact: string): Promise<SellerDocument | null> => {

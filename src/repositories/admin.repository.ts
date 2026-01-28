@@ -16,8 +16,22 @@ export class AdminRepository implements AdminRepositoryInterface {
         return updatedAdmin;
     };
 
-    deleteAdmin = async (id: string): Promise<void | null> => {
+    deleteAdmin = async (id: string): Promise<Boolean> => {
+        const admin = await this.findAdminById(id);
+        if (!admin) {
+            return false;
+        }
+        
         await AdminModel.findByIdAndDelete(id);
+        await UserModel.findByIdAndDelete(admin.baseUserId.toString());
+
+        const deletedAdmin = await this.findAdminById(id);
+        const deletedBaseUser = await UserModel.findById(admin.baseUserId.toString()).lean();
+
+        if (deletedAdmin || deletedBaseUser) {
+            return false;
+        }
+        return true;
     };
 
     findAdminById = async (id: string): Promise<AdminDocument | null> => {
@@ -41,8 +55,8 @@ export class AdminRepository implements AdminRepositoryInterface {
     };
 
     findAdminByContact = async (contact: string): Promise<AdminDocument | null> => {
-        const seller = await AdminModel.findOne({ contact }).lean();
-        return seller;
+        const admin = await AdminModel.findOne({ contact }).lean();
+        return admin;
     };
 
     getAllAdmins = async (): Promise<AdminDocument[] | null> => {

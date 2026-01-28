@@ -87,6 +87,22 @@ export const GetBuyerByIdDto = z.object({
 });
 export type GetBuyerByIdType = z.infer<typeof GetBuyerByIdDto>;
 
+// Update Profile Details DTO
+export const UpdateBuyerProfileDetailsDto = z.object({
+    fullName: fullNameValidation,
+    email: emailValidation,
+    username: usernameValidation,
+    contact: contactValidation,
+    bio: z.string().max(500)
+});
+export type UpdateBuyerProfileDetailsDtoType = z.infer<typeof UpdateBuyerProfileDetailsDto>;
+
+// Upload Profile Picture DTO
+export const UploadBuyerProfilePictureDto = z.object({
+    profilePicture: z.instanceof(File, { message: "No file provided! Upload a file." }),
+});
+export type UploadBuyerProfilePictureDtoType = z.infer<typeof UploadBuyerProfilePictureDto>;
+
 
 // what server responds with when sending user data 
 export const BuyerResponseDto = z.object({
@@ -118,4 +134,15 @@ export type BuyerResponseDtoType = {
     status?: number | null;
     token?: string | null;
     user?: z.infer<typeof BuyerResponseDto> | null;
+};
+
+export const UploadImageBuyerResponseDto = z.object({
+    imageUrl: z.url()
+});
+
+export type UploadImageBuyerResponseDtoType = {
+    success: boolean;
+    message: string;
+    status?: number | null;
+    data?: z.infer<typeof UploadImageBuyerResponseDto> | null;
 };

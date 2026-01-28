@@ -5,7 +5,7 @@ import type { Seller, SellerDocument } from "./../types/seller.type.ts";
 export interface SellerRepositoryInterface {
     createSeller(seller: Partial<Seller>): Promise<SellerDocument | null>;
     updateSeller(id: string, seller: Partial<Seller>): Promise<SellerDocument | null>;
-    deleteSeller(id: string): Promise<void | null>;
+    deleteSeller(id: string): Promise<Boolean>;
     findSellerById(id: string): Promise<SellerDocument | null>;
     findSellerByBaseUserId(baseUserId: string): Promise<SellerDocument | null>;
     findSellerByEmail(email: string): Promise<SellerDocument | null>;

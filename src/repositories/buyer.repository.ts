@@ -6,15 +6,6 @@ import UserModel from "./../models/user.model.ts";
 
 
 export class BuyerRepository implements BuyerRepositoryInterface {
-    findBuyerByEmail = async (email: string): Promise<BuyerDocument | null> => {
-        const user = await UserModel.findOne({ email }).lean();
-        if (!user) {
-            return null;
-        }
-        const buyer = await this.findBuyerByBaseUserId(user._id.toString());
-        return buyer;
-    }
-
     createBuyer = async (buyer: Buyer): Promise<BuyerDocument | null> => {
         const newBuyer = await BuyerModel.create(buyer);
         return newBuyer;
@@ -25,8 +16,22 @@ export class BuyerRepository implements BuyerRepositoryInterface {
         return updatedBuyer;
     };
 
-    deleteBuyer = async (id: string): Promise<void | null> => {
+    deleteBuyer = async (id: string): Promise<Boolean> => {
+        const buyer = await this.findBuyerById(id);
+        if (!buyer) {
+            return false;
+        }
+        
         await BuyerModel.findByIdAndDelete(id);
+        await UserModel.findByIdAndDelete(buyer.baseUserId.toString());
+
+        const deletedBuyer = await this.findBuyerById(id);
+        const deletedBaseUser = await UserModel.findById(buyer.baseUserId.toString()).lean();
+
+        if (deletedBuyer || deletedBaseUser) {
+            return false;
+        }
+        return true;
     };
 
     findBuyerById = async (id: string): Promise<BuyerDocument | null> => {
@@ -40,6 +45,15 @@ export class BuyerRepository implements BuyerRepositoryInterface {
         // const buyer = await BuyerModel.findOne({ userId: new Schema.Types.ObjectId(userId) }).lean();
         return buyer;
     };
+
+    findBuyerByEmail = async (email: string): Promise<BuyerDocument | null> => {
+        const user = await UserModel.findOne({ email }).lean();
+        if (!user) {
+            return null;
+        }
+        const buyer = await this.findBuyerByBaseUserId(user._id.toString());
+        return buyer;
+    }
 
     findBuyerByUsername = async (username: string): Promise<BuyerDocument | null> => {
         const buyer = await BuyerModel.findOne({ username }).lean();

@@ -76,6 +76,21 @@ export const GetAdminByIdDto = z.object({
 });
 export type GetAdminByIdType = z.infer<typeof GetAdminByIdDto>;
 
+// Update Profile Details DTO
+export const UpdateAdminProfileDetailsDto = z.object({
+    fullName: fullNameValidation,
+    email: emailValidation,
+    contact: contactValidation
+});
+export type UpdateAdminProfileDetailsDtoType = z.infer<typeof UpdateAdminProfileDetailsDto>;
+
+// Upload Profile Picture DTO
+export const UploadAdminProfilePictureDto = z.object({
+    profilePicture: z.instanceof(File, { message: "No file provided! Upload a file." }),
+});
+export type UploadAdminProfilePictureDtoType = z.infer<typeof UploadAdminProfilePictureDto>;
+
+
 // Admin Response
 export const AdminResponseDto = z.object({
     _id: z.string(),
@@ -97,4 +112,15 @@ export type AdminResponseDtoType = {
     status?: number | null;
     token?: string | null;
     user?: z.infer<typeof AdminResponseDto> | null;
+};
+
+export const UploadImageAdminResponseDto = z.object({
+    imageUrl: z.url()
+});
+
+export type UploadImageAdminResponseDtoType = {
+    success: boolean;
+    message: string;
+    status?: number | null;
+    data?: z.infer<typeof UploadImageAdminResponseDto> | null;
 };
