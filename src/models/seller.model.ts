@@ -3,15 +3,14 @@ import mongoose, { Schema, Document } from "mongoose";
 import type { Seller } from "./../types/seller.type.ts";
 
 
-export interface ISeller extends Omit<Seller, 'userId'>, Document {
-    // export interface ISeller extends Seller, Document {
-    userId: Schema.Types.ObjectId | string,
+export interface ISeller extends Omit<Seller, "baseUserId">, Document {
+    baseUserId: Schema.Types.ObjectId | string,
     createdAt: Date;
     updatedAt: Date;
 }
 
 const sellerSchema: Schema<ISeller> = new Schema({
-    userId: {
+    baseUserId: {
         type: Schema.Types.ObjectId,
         ref: "users",
         required: true,
@@ -33,6 +32,11 @@ const sellerSchema: Schema<ISeller> = new Schema({
     password: {
         type: String,
         minLength: [8, "Password must be at least 8 characters"],
+        default: null
+    },
+    bio: {
+        type: String,
+        maxLength: [500, "Bio cannot exceed 500 characters"],
         default: null
     },
     sellerNotes: {

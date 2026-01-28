@@ -1,4 +1,4 @@
-// src/services/seller.service.ts
+// src/services/existingSellerByBaseUserId.service.ts
 import type { SellerResponseDtoType, GetSellerByEmailDtoType, GetSellerByIdType } from "./../dtos/seller.dto.ts";
 import type { SellerRepositoryInterface } from "./../interfaces/seller.repository.interface.ts";
 import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
@@ -7,15 +7,45 @@ import { HttpError } from "./../errors/http-error.ts";
 
 export class SellerService {
     private userRepo: UserRepositoryInterface;
-    private sellerRepo: SellerRepositoryInterface;
+    private existingSellerByBaseUserIdRepo: SellerRepositoryInterface;
 
     constructor(
         userRepo: UserRepositoryInterface,
-        sellerRepo: SellerRepositoryInterface
+        existingSellerByBaseUserIdRepo: SellerRepositoryInterface
     ) {
         this.userRepo = userRepo;
-        this.sellerRepo = sellerRepo;
+        this.existingSellerByBaseUserIdRepo = existingSellerByBaseUserIdRepo;
     }
+
+    getCurrentSellerUser = async (userId: string): Promise<SellerResponseDtoType> => {
+        const existingSellerById = await this.existingSellerByBaseUserIdRepo.findSellerById(userId);
+        if (!existingSellerById) {
+            throw new HttpError(404, "Seller with this id not found!");
+        }
+
+        const exisitingBaseUserByBaseUserId = await this.userRepo.findUserById(existingSellerById.baseUserId.toString());
+        if (!exisitingBaseUserByBaseUserId) {
+            throw new HttpError(404, "Base user with this user id not found!");
+        }
+
+        const response: SellerResponseDtoType = {
+            success: true,
+            message: "Seller profile details updated successfully.",
+            status: 200,
+            user: {
+                _id: existingSellerById._id.toString(),
+                baseUserId: existingSellerById.baseUserId.toString() || exisitingBaseUserByBaseUserId._id.toString(),
+                email: exisitingBaseUserByBaseUserId.email,
+                fullName: existingSellerById.fullName,
+                contact: existingSellerById.contact,
+                role: exisitingBaseUserByBaseUserId.role,
+                isVerified: exisitingBaseUserByBaseUserId.isVerified,
+                profilePictureUrl: existingSellerById.profilePictureUrl,
+                isPermanentlyBanned: exisitingBaseUserByBaseUserId.isPermanentlyBanned,
+            }
+        };
+        return response;
+    };
 
     getSellerByEmail = async (getSellerByEmailDto: GetSellerByEmailDtoType): Promise<SellerResponseDtoType | null> => {
         const { email } = getSellerByEmailDto;
@@ -26,15 +56,15 @@ export class SellerService {
 
         // Check existing user
         const decodedEmail = decodeURIComponent(email);
-        const existingUserByEmail = await this.userRepo.findUserByEmail(decodedEmail);
+        const exisitingBaseUserByEmail = await this.userRepo.findUserByEmail(decodedEmail);
 
-        if (!existingUserByEmail) {
+        if (!exisitingBaseUserByEmail) {
             throw new HttpError(404, "User with this email does not exist!");
         }
 
-        // const seller = await this.sellerRepo.findSellerByEmail(decodedEmail);
-        const seller = await this.sellerRepo.findSellerByBaseUserId(existingUserByEmail._id.toString());
-        if (!seller) {
+        // const existingSellerByBaseUserId = await this.existingSellerByBaseUserIdRepo.findSellerByEmail(decodedEmail);
+        const existingSellerByBaseUserId = await this.existingSellerByBaseUserIdRepo.findSellerByBaseUserId(exisitingBaseUserByEmail._id.toString());
+        if (!existingSellerByBaseUserId) {
             throw new HttpError(404, "Seller with this base user id not found!");
         }
 
@@ -43,19 +73,16 @@ export class SellerService {
             message: "Seller with this email successfully fetched.",
             status: 200,
             user: {
-                _id: seller._id.toString(),
-                userId: seller.userId.toString(),
-                fullName: seller.fullName,
-                contact: seller.contact,
-                profilePictureUrl: existingUserByEmail.profilePictureUrl,
-                bio: seller.bio,
-                baseUser: {
-                    _id: existingUserByEmail._id.toString(),
-                    email: existingUserByEmail.email,
-                    role: existingUserByEmail.role,
-                    isVerified: existingUserByEmail.isVerified,
-                    isPermanentlyBanned: existingUserByEmail.isPermanentlyBanned,
-                }
+                _id: existingSellerByBaseUserId._id.toString(),
+                email: exisitingBaseUserByEmail.email,
+                role: exisitingBaseUserByEmail.role,
+                isVerified: exisitingBaseUserByEmail.isVerified,
+                baseUserId: existingSellerByBaseUserId.baseUserId.toString() || exisitingBaseUserByEmail._id.toString(),
+                fullName: existingSellerByBaseUserId.fullName,
+                contact: existingSellerByBaseUserId.contact,
+                profilePictureUrl: exisitingBaseUserByEmail.profilePictureUrl,
+                bio: existingSellerByBaseUserId.bio,
+                isPermanentlyBanned: exisitingBaseUserByEmail.isPermanentlyBanned,
             }
         };
         return response;
@@ -69,15 +96,15 @@ export class SellerService {
         }
 
         const decodedSellerId = decodeURIComponent(id);
-        const sellerById = await this.sellerRepo.findSellerById(decodedSellerId);
+        const exisitingSellerById = await this.existingSellerByBaseUserIdRepo.findSellerById(decodedSellerId);
 
-        if (!sellerById) {
+        if (!exisitingSellerById) {
             throw new HttpError(404, "Seller with this id not found!");
         }
 
         // Check existing user
-        const existingUserById = await this.userRepo.findUserById(sellerById.userId.toString());
-        if (!existingUserById) {
+        const exisitingBaseUserByBaseUserId = await this.userRepo.findUserById(exisitingSellerById.baseUserId.toString());
+        if (!exisitingBaseUserByBaseUserId) {
             throw new HttpError(404, "User with this id not found!");
         }
 
@@ -86,19 +113,16 @@ export class SellerService {
             message: "Seller with this id successfully fetched.",
             status: 200,
             user: {
-                _id: sellerById._id.toString(),
-                userId: sellerById.userId.toString(),
-                fullName: sellerById.fullName,
-                contact: sellerById.contact,
-                profilePictureUrl: existingUserById.profilePictureUrl,
-                bio: sellerById.bio,
-                baseUser: {
-                    _id: existingUserById._id.toString(),
-                    email: existingUserById.email,
-                    role: existingUserById.role,
-                    isVerified: existingUserById.isVerified,
-                    isPermanentlyBanned: existingUserById.isPermanentlyBanned,
-                }
+                _id: exisitingSellerById._id.toString(),
+                email: exisitingBaseUserByBaseUserId.email,
+                role: exisitingBaseUserByBaseUserId.role,
+                isVerified: exisitingBaseUserByBaseUserId.isVerified,
+                baseUserId: exisitingSellerById.baseUserId.toString() || exisitingBaseUserByBaseUserId._id.toString(),
+                fullName: exisitingSellerById.fullName,
+                contact: exisitingSellerById.contact,
+                profilePictureUrl: exisitingBaseUserByBaseUserId.profilePictureUrl,
+                bio: exisitingSellerById.bio,
+                isPermanentlyBanned: exisitingBaseUserByBaseUserId.isPermanentlyBanned,
             }
         };
         return response;

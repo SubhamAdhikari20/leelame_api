@@ -51,7 +51,6 @@ export const bioValidation = z
     .string()
     .min(5, { message: "Bio must be atleast 5 characters long" })
     .max(500, { message: "Bio must not exceed 500 characters" })
-    .optional()
     .nullish();
 
 // export const termsAndConditionsValidation = z

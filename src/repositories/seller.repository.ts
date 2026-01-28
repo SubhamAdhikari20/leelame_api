@@ -25,17 +25,17 @@ export class SellerRepository implements SellerRepositoryInterface {
         return seller;
     };
 
-    findSellerByBaseUserId = async (userId: string): Promise<SellerDocument | null> => {
-        const seller = await SellerModel.findOne({ userId: userId }).lean();
+    findSellerByBaseUserId = async (baseUserId: string): Promise<SellerDocument | null> => {
+        const seller = await SellerModel.findOne({ baseUserId: baseUserId }).lean();
         return seller;
     };
 
     findSellerByEmail = async (email: string): Promise<SellerDocument | null> => {
-        const user = await UserModel.findOne({ email }).lean();
-        if (!user) {
+        const baseUser = await UserModel.findOne({ email }).lean();
+        if (!baseUser) {
             return null;
         }
-        const buyer = await this.findSellerByBaseUserId(user._id.toString());
+        const buyer = await this.findSellerByBaseUserId(baseUser._id.toString());
         return buyer;
     };
 

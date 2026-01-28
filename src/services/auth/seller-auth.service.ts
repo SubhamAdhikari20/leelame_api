@@ -27,20 +27,14 @@ export class SellerAuthService {
     private normalizeForResponse = (baseUser: any, profile: any) => {
         return {
             _id: (profile && (baseUser.role === "seller")) ? profile._id.toString() : profile._id,
+            email: baseUser.email,
+            role: baseUser.role,
+            baseUserId: (profile.baseUserId || baseUser._id) ? profile.baseUserId.toString() : baseUser._id.toString(),
+            isVerified: baseUser.isVerified,
             fullName: profile.fullName ?? null,
             username: profile.username ?? null,
             contact: profile.contact ?? null,
-            profilePictureUrl: baseUser.profilePictureUrl ?? null,
-            bio: profile.bio ?? null,
-            terms: profile.terms,
-            userId: (profile.userId || baseUser._id) ? profile.userId.toString() : baseUser._id.toString(),
-            baseUser: {
-                _id: (profile.userId || baseUser._id) ? profile.userId.toString() : baseUser._id.toString(),
-                email: baseUser.email,
-                role: baseUser.role,
-                isVerified: baseUser.isVerified,
-                isPermanentlyBanned: baseUser.isPermanentlyBanned,
-            }
+            isPermanentlyBanned: baseUser.isPermanentlyBanned,
         };
     };
 
@@ -89,7 +83,7 @@ export class SellerAuthService {
 
             if (!sellerProfile) {
                 sellerProfile = await this.sellerRepo.createSeller({
-                    userId: newUser._id.toString(),
+                    baseUserId: newUser._id.toString(),
                     fullName,
                     contact,
                 });
@@ -121,7 +115,7 @@ export class SellerAuthService {
             }
 
             sellerProfile = await this.sellerRepo.createSeller({
-                userId: newUser._id.toString(),
+                baseUserId: newUser._id.toString(),
                 fullName,
                 contact,
                 password: hashedPassword,
@@ -140,7 +134,7 @@ export class SellerAuthService {
 
         // Generate Token
         const token = jwt.sign(
-            { _id: newUser._id, email: newUser.email, contact: sellerProfile.contact, role: newUser.role },
+            { _id: newUser._id.toString(), baseUserId: newUser._id.toString() || sellerProfile.baseUserId.toString(), email: newUser.email, phoneNumber: sellerProfile.contact, role: newUser.role },
             process.env.JWT_SECRET!,
             { expiresIn: expiresInSeconds }
         );
@@ -169,14 +163,6 @@ export class SellerAuthService {
             throw new HttpError(500, emailResponse.message ?? "Failed to send verification email!");
         }
 
-        newUser = await this.userRepo.updateUser(newUser._id.toString(), {
-            sellerProfile: sellerProfile._id.toString()
-        });
-
-        if (!newUser) {
-            throw new HttpError(404, "User with this id not found!");
-        }
-
         const respose: SellerResponseDtoType = {
             success: true,
             message: "Seller registered successfully. Please verify your email.",
@@ -184,18 +170,13 @@ export class SellerAuthService {
             token,
             user: {
                 _id: sellerProfile._id.toString(),
-                userId: sellerProfile.userId.toString(),
+                email: newUser.email,
+                role: newUser.role,
+                isVerified: newUser.isVerified,
+                baseUserId: sellerProfile.baseUserId.toString(),
                 fullName: sellerProfile.fullName,
                 contact: sellerProfile.contact,
-                createdAt: sellerProfile.createdAt,
-                updatedAt: sellerProfile.updatedAt,
-                baseUser: {
-                    _id: newUser._id.toString(),
-                    email: newUser.email,
-                    role: newUser.role,
-                    isVerified: newUser.isVerified,
-                    isPermanentlyBanned: newUser.isPermanentlyBanned,
-                }
+                isPermanentlyBanned: newUser.isPermanentlyBanned,
             }
         };
         return respose;
@@ -307,7 +288,7 @@ export class SellerAuthService {
 
                 // Generate Token
                 token = jwt.sign(
-                    { _id: sellerProfile._id.toString(), userId: user._id.toString() ?? sellerProfile.userId.toString(), email: user.email, phoneNumber: sellerProfile.contact, role: user.role },
+                    { _id: sellerProfile._id.toString(), baseUserId: user._id.toString() || sellerProfile.baseUserId.toString(), email: user.email, phoneNumber: sellerProfile.contact, role: user.role },
                     process.env.JWT_SECRET!,
                     { expiresIn: expiresInSeconds }
                 );
@@ -337,7 +318,7 @@ export class SellerAuthService {
                 throw new HttpError(400, "Invalid password! Please enter correct password.");
             }
 
-            user = await this.userRepo.findUserById(sellerProfile.userId.toString());
+            user = await this.userRepo.findUserById(sellerProfile.baseUserId.toString());
             if (!user) {
                 throw new HttpError(404, "User not found!");
             }
@@ -347,7 +328,7 @@ export class SellerAuthService {
 
             // Generate Token
             token = jwt.sign(
-                { _id: sellerProfile._id.toString(), userId: user._id.toString() ?? sellerProfile.userId.toString(), email: user.email, phoneNumber: sellerProfile.contact, role: user.role },
+                { _id: sellerProfile._id.toString(), baseUserId: user._id.toString() || sellerProfile.baseUserId.toString(), email: user.email, phoneNumber: sellerProfile.contact, role: user.role },
                 process.env.JWT_SECRET!,
                 { expiresIn: expiresInSeconds }
             );

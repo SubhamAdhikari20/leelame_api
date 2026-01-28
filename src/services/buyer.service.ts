@@ -17,6 +17,38 @@ export class BuyerService {
         this.buyerRepo = buyerRepo;
     }
 
+    getCurrentBuyerUser = async (buyerId: string): Promise<BuyerResponseDtoType> => {
+        const existingBuyerById = await this.buyerRepo.findBuyerById(buyerId);
+        if (!existingBuyerById) {
+            throw new HttpError(404, "Buyer with this id not found!");
+        }
+
+        const exisitingBaseUserByBaseUserId = await this.userRepo.findUserById(existingBuyerById.baseUserId.toString());
+        if (!exisitingBaseUserByBaseUserId) {
+            throw new HttpError(404, "Base user with this user id not found!");
+        }
+
+        const response: BuyerResponseDtoType = {
+            success: true,
+            message: "Buyer profile details updated successfully.",
+            status: 200,
+            user: {
+                _id: existingBuyerById._id.toString(),
+                email: exisitingBaseUserByBaseUserId.email,
+                role: exisitingBaseUserByBaseUserId.role,
+                isVerified: exisitingBaseUserByBaseUserId.isVerified,
+                baseUserId: existingBuyerById.baseUserId.toString() || exisitingBaseUserByBaseUserId._id.toString(),
+                fullName: existingBuyerById.fullName,
+                username: existingBuyerById.username,
+                contact: existingBuyerById.contact,
+                profilePictureUrl: existingBuyerById.profilePictureUrl,
+                bio: existingBuyerById.bio,
+                isPermanentlyBanned: exisitingBaseUserByBaseUserId.isPermanentlyBanned,
+            }
+        };
+        return response;
+    };
+
     getBuyerByEmail = async (getBuyerByEmailDto: GetBuyerByEmailDtoType): Promise<BuyerResponseDtoType | null> => {
         const { email } = getBuyerByEmailDto;
 
@@ -26,15 +58,15 @@ export class BuyerService {
 
         // Check existing user
         const decodedEmail = decodeURIComponent(email);
-        const existingUserByEmail = await this.userRepo.findUserByEmail(decodedEmail);
+        const exisitingBaseUserByEmail = await this.userRepo.findUserByEmail(decodedEmail);
 
-        if (!existingUserByEmail) {
+        if (!exisitingBaseUserByEmail) {
             throw new HttpError(404, "User with this email does not exist!");
         }
 
         // const buyer = await this.buyerRepo.findBuyerByEmail(decodedEmail);
-        const buyer = await this.buyerRepo.findBuyerByBaseUserId(existingUserByEmail._id.toString());
-        if (!buyer) {
+        const existingBuyerByBaseUserId = await this.buyerRepo.findBuyerByBaseUserId(exisitingBaseUserByEmail._id.toString());
+        if (!existingBuyerByBaseUserId) {
             throw new HttpError(404, "Buyer with this base user id not found!");
         }
 
@@ -43,21 +75,17 @@ export class BuyerService {
             message: "Buyer with this email successfully fetched.",
             status: 200,
             user: {
-                _id: buyer._id.toString(),
-                userId: buyer.userId.toString(),
-                fullName: buyer.fullName,
-                username: buyer.username,
-                contact: buyer.contact,
-                profilePictureUrl: existingUserByEmail.profilePictureUrl,
-                bio: buyer.bio,
-                terms: buyer.terms,
-                baseUser: {
-                    _id: existingUserByEmail._id.toString(),
-                    email: existingUserByEmail.email,
-                    role: existingUserByEmail.role,
-                    isVerified: existingUserByEmail.isVerified,
-                    isPermanentlyBanned: existingUserByEmail.isPermanentlyBanned,
-                }
+                _id: existingBuyerByBaseUserId._id.toString(),
+                email: exisitingBaseUserByEmail.email,
+                role: exisitingBaseUserByEmail.role,
+                isVerified: exisitingBaseUserByEmail.isVerified,
+                baseUserId: existingBuyerByBaseUserId.baseUserId.toString() || exisitingBaseUserByEmail._id.toString(),
+                fullName: existingBuyerByBaseUserId.fullName,
+                username: existingBuyerByBaseUserId.username,
+                contact: existingBuyerByBaseUserId.contact,
+                profilePictureUrl: exisitingBaseUserByEmail.profilePictureUrl,
+                bio: existingBuyerByBaseUserId.bio,
+                isPermanentlyBanned: exisitingBaseUserByEmail.isPermanentlyBanned,
             }
         };
         return response;
@@ -71,15 +99,15 @@ export class BuyerService {
         }
 
         const decodedBuyerId = decodeURIComponent(id);
-        const buyerById = await this.buyerRepo.findBuyerById(decodedBuyerId);
+        const exisitingBuyerById = await this.buyerRepo.findBuyerById(decodedBuyerId);
 
-        if (!buyerById) {
+        if (!exisitingBuyerById) {
             throw new HttpError(404, "Buyer with this id not found!");
         }
 
         // Check existing user
-        const existingUserById = await this.userRepo.findUserById(buyerById.userId.toString());
-        if (!existingUserById) {
+        const exisitingBaseUserByBaseUserId = await this.userRepo.findUserById(exisitingBuyerById.baseUserId.toString());
+        if (!exisitingBaseUserByBaseUserId) {
             throw new HttpError(404, "User with this id not found!");
         }
 
@@ -88,21 +116,17 @@ export class BuyerService {
             message: "Buyer with this id successfully fetched.",
             status: 200,
             user: {
-                _id: buyerById._id.toString(),
-                userId: buyerById.userId.toString(),
-                fullName: buyerById.fullName,
-                username: buyerById.username,
-                contact: buyerById.contact,
-                profilePictureUrl: existingUserById.profilePictureUrl,
-                bio: buyerById.bio,
-                terms: buyerById.terms,
-                baseUser: {
-                    _id: existingUserById._id.toString(),
-                    email: existingUserById.email,
-                    role: existingUserById.role,
-                    isVerified: existingUserById.isVerified,
-                    isPermanentlyBanned: existingUserById.isPermanentlyBanned,
-                }
+                _id: exisitingBuyerById._id.toString(),
+                email: exisitingBaseUserByBaseUserId.email,
+                role: exisitingBaseUserByBaseUserId.role,
+                isVerified: exisitingBaseUserByBaseUserId.isVerified,
+                baseUserId: exisitingBuyerById.baseUserId.toString() || exisitingBaseUserByBaseUserId._id.toString(),
+                fullName: exisitingBuyerById.fullName,
+                username: exisitingBuyerById.username,
+                contact: exisitingBuyerById.contact,
+                profilePictureUrl: exisitingBaseUserByBaseUserId.profilePictureUrl,
+                bio: exisitingBuyerById.bio,
+                isPermanentlyBanned: exisitingBaseUserByBaseUserId.isPermanentlyBanned,
             }
         };
         return response;

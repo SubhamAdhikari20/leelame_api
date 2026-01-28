@@ -1,22 +1,16 @@
 // src/models/buyer.model.ts
 import mongoose, { Schema, Document } from "mongoose";
-import type { IUser } from "./user.model.ts";
 import type { Buyer } from "./../types/buyer.type.ts";
 
 
-export interface IBuyer extends Omit<Buyer, "userId">, Document {
-    // export interface IBuyer extends Buyer, Document {
-    userId: Schema.Types.ObjectId | string,
+export interface IBuyer extends Omit<Buyer, "baseUserId">, Document {
+    baseUserId: Schema.Types.ObjectId | string,
     createdAt: Date;
     updatedAt: Date;
 }
 
-export interface IBuyerPopulated extends Omit<IBuyer, "userId"> {
-    userId: IUser;
-}
-
 const buyerSchema: Schema<IBuyer> = new Schema({
-    userId: {
+    baseUserId: {
         type: Schema.Types.ObjectId,
         ref: "users",
         required: true,
@@ -48,7 +42,7 @@ const buyerSchema: Schema<IBuyer> = new Schema({
     password: {
         type: String,
         minLength: [8, "Password must be at least 8 characters"],
-        // default: null
+        default: null
     },
     googleId: {
         type: String,
@@ -59,7 +53,7 @@ const buyerSchema: Schema<IBuyer> = new Schema({
     bio: {
         type: String,
         maxLength: [500, "Bio cannot exceed 500 characters"],
-        // default: null
+        default: null
     },
     terms: {
         type: Boolean,

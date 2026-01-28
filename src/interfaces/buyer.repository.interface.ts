@@ -7,7 +7,7 @@ export interface BuyerRepositoryInterface {
     updateBuyer(id: string, buyer: Partial<Buyer>): Promise<BuyerDocument | null>;
     deleteBuyer(id: string): Promise<void | null>;
     findBuyerById(id: string): Promise<BuyerDocument | null>;
-    findBuyerByBaseUserId(userId: string): Promise<BuyerDocument | null>;
+    findBuyerByBaseUserId(baseUserId: string): Promise<BuyerDocument | null>;
     findBuyerByEmail(email: string): Promise<BuyerDocument | null>;
     findBuyerByUsername(username: string): Promise<BuyerDocument | null>;
     findBuyerByContact(contact: string): Promise<BuyerDocument | null>;

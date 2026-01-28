@@ -35,8 +35,8 @@ export class BuyerRepository implements BuyerRepositoryInterface {
         return buyer;
     };
 
-    findBuyerByBaseUserId = async (userId: string): Promise<BuyerDocument | null> => {
-        const buyer = await BuyerModel.findOne({ userId: userId }).lean();
+    findBuyerByBaseUserId = async (baseUserId: string): Promise<BuyerDocument | null> => {
+        const buyer = await BuyerModel.findOne({ baseUserId: baseUserId }).lean();
         // const buyer = await BuyerModel.findOne({ userId: new Schema.Types.ObjectId(userId) }).lean();
         return buyer;
     };

@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { IUser } from "./../models/user.model.ts";
 
 
-export const userSchema = z.object({
+const userSchema = z.object({
     email: z.email().min(5).max(50),
     profilePictureUrl: z.string().nullish(),
     role: z.enum(["admin", "seller", "buyer"]),
@@ -17,10 +17,6 @@ export const userSchema = z.object({
     bannedAt: z.date().nullish(),
     bannedDateFrom: z.date().nullish(),
     bannedDateTo: z.date().nullish(),
-
-    buyerProfile: z.string().nullish(),
-    sellerProfile: z.string().nullish(),
-    adminProfile: z.string().nullish(),
 });
 
 export type User = z.infer<typeof userSchema>;

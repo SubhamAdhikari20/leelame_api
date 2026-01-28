@@ -26,21 +26,6 @@ const userSchema: Schema<IUser> = new Schema({
         enum: ["admin", "seller", "buyer"],
         default: "buyer"
     },
-    buyerProfile: {
-        type: Schema.Types.ObjectId,
-        ref: "buyers",
-        default: null
-    },
-    sellerProfile: {
-        type: Schema.Types.ObjectId,
-        ref: "sellers",
-        default: null
-    },
-    adminProfile: {
-        type: Schema.Types.ObjectId,
-        ref: "admins",
-        default: null
-    },
     isVerified: {
         type: Boolean,
         default: false
@@ -88,7 +73,5 @@ const userSchema: Schema<IUser> = new Schema({
 );
 
 const User = (mongoose.models.users as mongoose.Model<IUser>) ?? (mongoose.model<IUser>("users", userSchema));
-
-// const User = mongoose.models.users || mongoose.model<IUser>("users", userSchema);
 
 export default User;
