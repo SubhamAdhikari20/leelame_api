@@ -232,7 +232,7 @@ export class BuyerService {
                 fullName: existingBuyerByBaseUserId.fullName,
                 username: existingBuyerByBaseUserId.username,
                 contact: existingBuyerByBaseUserId.contact,
-                profilePictureUrl: exisitingBaseUserByEmail.profilePictureUrl,
+                profilePictureUrl: existingBuyerByBaseUserId.profilePictureUrl,
                 bio: existingBuyerByBaseUserId.bio,
                 isPermanentlyBanned: exisitingBaseUserByEmail.isPermanentlyBanned,
             }

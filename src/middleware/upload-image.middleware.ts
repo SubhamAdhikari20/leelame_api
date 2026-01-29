@@ -3,11 +3,17 @@ import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import fs from "fs";
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
 import { v2 as cloudinary } from "cloudinary";
 import streamifier from "streamifier";
-import { Request } from "express";
+import type { Request } from "express";
 import { HttpError } from "./../errors/http-error.ts";
 
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, "./../config/config.env") });
 
 // read env vars
 const CLOUD_NAME = process.env.CLOUD_NAME;

@@ -34,6 +34,10 @@ const adminSchema: Schema<IAdmin> = new Schema({
         required: [true, "Password is required"],
         minLength: [8, "Password must be at least 8 characters"],
     },
+    profilePictureUrl: {
+        type: String,
+        default: null
+    },
 },
     {
         timestamps: true

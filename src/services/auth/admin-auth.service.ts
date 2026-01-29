@@ -275,7 +275,7 @@ export class AdminAuthService {
 
             // Generate Token
             const token = jwt.sign(
-                { _id: adminProfile._id.toString(), baseUserId: user._id.toString() || adminProfile.baseUserId.toString(), email: user.email, phoneNumber: adminProfile.contact, role: user.role },
+                { _id: adminProfile._id.toString(), baseUserId: user._id.toString() || adminProfile.baseUserId.toString(), email: user.email, contact: adminProfile.contact, role: user.role },
                 process.env.JWT_SECRET!,
                 { expiresIn: expiresInSeconds }
             );

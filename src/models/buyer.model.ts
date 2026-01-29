@@ -44,6 +44,10 @@ const buyerSchema: Schema<IBuyer> = new Schema({
         minLength: [8, "Password must be at least 8 characters"],
         default: null
     },
+    profilePictureUrl: {
+        type: String,
+        default: null
+    },
     googleId: {
         type: String,
         unique: true,

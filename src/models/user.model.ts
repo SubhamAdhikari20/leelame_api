@@ -17,10 +17,6 @@ const userSchema: Schema<IUser> = new Schema({
         trim: true,
         match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid email format"]
     },
-    profilePictureUrl: {
-        type: String,
-        default: null
-    },
     role: {
         type: String,
         enum: ["admin", "seller", "buyer"],

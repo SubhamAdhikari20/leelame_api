@@ -155,7 +155,7 @@ export class BuyerAuthService {
 
         // Generate Token
         const token = jwt.sign(
-            { _id: buyerProfile._id.toString(), baseUserId: newUser._id.toString() || buyerProfile.baseUserId.toString(), email: newUser.email, username: buyerProfile.username, role: newUser.role },
+            { _id: buyerProfile._id.toString(), baseUserId: newUser._id.toString() || buyerProfile.baseUserId.toString(), email: newUser.email, username: buyerProfile.username, contact: buyerProfile.contact, role: newUser.role },
             process.env.JWT_SECRET!,
             { expiresIn: expiresInSeconds }
         );
@@ -339,7 +339,7 @@ export class BuyerAuthService {
 
                 // Generate Token
                 token = jwt.sign(
-                    { _id: buyerProfile._id.toString(), baseUserId: user._id.toString() || buyerProfile.baseUserId.toString(), email: user.email, username: buyerProfile.username, role: user.role },
+                    { _id: buyerProfile._id.toString(), baseUserId: user._id.toString() || buyerProfile.baseUserId.toString(), email: user.email, username: buyerProfile.username, contact: buyerProfile.contact, role: user.role },
                     process.env.JWT_SECRET!,
                     { expiresIn: expiresInSeconds }
                 );
@@ -379,7 +379,7 @@ export class BuyerAuthService {
 
             // Generate Token
             token = jwt.sign(
-                { _id: buyerProfile._id.toString(), baseUserId: user._id.toString() || buyerProfile.baseUserId.toString(), email: user.email, username: buyerProfile.username, role: user.role },
+                { _id: buyerProfile._id.toString(), baseUserId: user._id.toString() || buyerProfile.baseUserId.toString(), email: user.email, username: buyerProfile.username, contact: buyerProfile.contact, role: user.role },
                 process.env.JWT_SECRET!,
                 { expiresIn: expiresInSeconds }
             );

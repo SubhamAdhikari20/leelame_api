@@ -5,7 +5,6 @@ import type { IUser } from "./../models/user.model.ts";
 
 const userSchema = z.object({
     email: z.email().min(5).max(50),
-    profilePictureUrl: z.string().nullish(),
     role: z.enum(["admin", "seller", "buyer"]),
     isVerified: z.boolean(),
     verifyCode: z.string().nullish(),

@@ -198,7 +198,7 @@ export class AdminService {
                 baseUserId: existingAdminByBaseUserId.baseUserId.toString() || exisitingBaseUserByEmail._id.toString(),
                 fullName: existingAdminByBaseUserId.fullName,
                 contact: existingAdminByBaseUserId.contact,
-                profilePictureUrl: exisitingBaseUserByEmail.profilePictureUrl,
+                profilePictureUrl: existingAdminByBaseUserId.profilePictureUrl,
                 isPermanentlyBanned: exisitingBaseUserByEmail.isPermanentlyBanned,
             }
         };

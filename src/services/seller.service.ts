@@ -199,7 +199,7 @@ export class SellerService {
                 baseUserId: existingSellerByBaseUserId.baseUserId.toString() || exisitingBaseUserByEmail._id.toString(),
                 fullName: existingSellerByBaseUserId.fullName,
                 contact: existingSellerByBaseUserId.contact,
-                profilePictureUrl: exisitingBaseUserByEmail.profilePictureUrl,
+                profilePictureUrl: existingSellerByBaseUserId.profilePictureUrl,
                 bio: existingSellerByBaseUserId.bio,
                 isPermanentlyBanned: exisitingBaseUserByEmail.isPermanentlyBanned,
             }

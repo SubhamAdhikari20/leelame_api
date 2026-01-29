@@ -134,7 +134,7 @@ export class SellerAuthService {
 
         // Generate Token
         const token = jwt.sign(
-            { _id: newUser._id.toString(), baseUserId: newUser._id.toString() || sellerProfile.baseUserId.toString(), email: newUser.email, phoneNumber: sellerProfile.contact, role: newUser.role },
+            { _id: newUser._id.toString(), baseUserId: newUser._id.toString() || sellerProfile.baseUserId.toString(), email: newUser.email, contact: sellerProfile.contact, role: newUser.role },
             process.env.JWT_SECRET!,
             { expiresIn: expiresInSeconds }
         );
@@ -288,7 +288,7 @@ export class SellerAuthService {
 
                 // Generate Token
                 token = jwt.sign(
-                    { _id: sellerProfile._id.toString(), baseUserId: user._id.toString() || sellerProfile.baseUserId.toString(), email: user.email, phoneNumber: sellerProfile.contact, role: user.role },
+                    { _id: sellerProfile._id.toString(), baseUserId: user._id.toString() || sellerProfile.baseUserId.toString(), email: user.email, contact: sellerProfile.contact, role: user.role },
                     process.env.JWT_SECRET!,
                     { expiresIn: expiresInSeconds }
                 );
@@ -328,7 +328,7 @@ export class SellerAuthService {
 
             // Generate Token
             token = jwt.sign(
-                { _id: sellerProfile._id.toString(), baseUserId: user._id.toString() || sellerProfile.baseUserId.toString(), email: user.email, phoneNumber: sellerProfile.contact, role: user.role },
+                { _id: sellerProfile._id.toString(), baseUserId: user._id.toString() || sellerProfile.baseUserId.toString(), email: user.email, contact: sellerProfile.contact, role: user.role },
                 process.env.JWT_SECRET!,
                 { expiresIn: expiresInSeconds }
             );

@@ -64,7 +64,7 @@ export class BuyerAuthMiddleware {
                 throw new HttpError(400, "JWT Error! The token is not decoded.");
             }
 
-            if (decoded.role && decoded.role === "buyer") {
+            if (decoded.role && decoded.role !== "buyer") {
                 throw new HttpError(400, "Invalid role! Role should be 'buyer'.");
             }
 
@@ -138,7 +138,7 @@ export class SellerAuthMiddleware {
                 throw new HttpError(400, "JWT Error! The token is not decoded.");
             }
 
-            if (decoded.role && decoded.role === "seller") {
+            if (decoded.role && decoded.role !== "seller") {
                 throw new HttpError(400, "Invalid role! Role should be 'seller'.");
             }
 
@@ -208,7 +208,7 @@ export class AdminAuthMiddleware {
                 throw new HttpError(400, "JWT Error! The token is not decoded.");
             }
 
-            if (decoded.role && decoded.role === "admin") {
+            if (decoded.role && decoded.role !== "admin") {
                 throw new HttpError(400, "Invalid role! Role should be 'admin'.");
             }
 

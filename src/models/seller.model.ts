@@ -34,6 +34,10 @@ const sellerSchema: Schema<ISeller> = new Schema({
         minLength: [8, "Password must be at least 8 characters"],
         default: null
     },
+    profilePictureUrl: {
+        type: String,
+        default: null
+    },
     bio: {
         type: String,
         maxLength: [500, "Bio cannot exceed 500 characters"],
