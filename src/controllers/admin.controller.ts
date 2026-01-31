@@ -164,31 +164,15 @@ export class AdminController {
                 });
             }
 
-            const reqFile = await req.file;
-            const file = {
-                profilePicture: reqFile
-            };
-
-            // const file = {
-            //     profilePicture: form.get("profile-picture")
-            // };
-
-            if (!file) {
+            const profilePicture = await req.file;
+            if (!profilePicture) {
                 return res.status(400).json({
                     success: false,
                     message: "No file provided!"
                 });
             }
 
-            const validatedData = UploadAdminProfilePictureDto.safeParse(file);
-            if (!validatedData.success) {
-                return res.status(400).json({
-                    success: false,
-                    message: z.prettifyError(validatedData.error)
-                });
-            }
-
-            const result = await this.adminService.uploadProfilePicture(adminId.toString(), validatedData.data);
+            const result = await this.adminService.uploadProfilePicture(adminId.toString(), profilePicture);
             const validatedResponseAdminData = UploadImageAdminResponseDto.safeParse(result?.data);
             if (!validatedResponseAdminData.success) {
                 return res.status(400).json({

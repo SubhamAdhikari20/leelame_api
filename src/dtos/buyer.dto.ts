@@ -98,7 +98,22 @@ export const UpdateBuyerProfileDetailsDto = z.object({
 export type UpdateBuyerProfileDetailsDtoType = z.infer<typeof UpdateBuyerProfileDetailsDto>;
 
 // Upload Profile Picture DTO
+const multerFileSchema = z.object({
+    fieldname: z.string(),
+    originalname: z.string(),
+    encoding: z.string(),
+    mimetype: z.string(),
+    size: z.number(),
+    destination: z.string().optional(),
+    filename: z.string().optional(),
+    path: z.string().optional(),
+    buffer: z.instanceof(Buffer).optional(),
+}).refine((data) => data.mimetype.startsWith("image/"), {
+    message: "Only image files are allowed!",
+});
+
 export const UploadBuyerProfilePictureDto = z.object({
+    // profilePicture: multerFileSchema.refine((file) => !!file, { message: "No file provided! Upload a file." }),
     profilePicture: z.instanceof(File, { message: "No file provided! Upload a file." }),
 });
 export type UploadBuyerProfilePictureDtoType = z.infer<typeof UploadBuyerProfilePictureDto>;
@@ -137,7 +152,7 @@ export type BuyerResponseDtoType = {
 };
 
 export const UploadImageBuyerResponseDto = z.object({
-    imageUrl: z.url()
+    imageUrl: z.string()
 });
 
 export type UploadImageBuyerResponseDtoType = {

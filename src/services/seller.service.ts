@@ -3,7 +3,7 @@ import type { SellerResponseDtoType, UpdateSellerProfileDetailsDtoType, UploadIm
 import type { SellerRepositoryInterface } from "./../interfaces/seller.repository.interface.ts";
 import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
-import { uploadImage } from "./../middleware/upload-image.middleware.ts";
+import { processSingleUpload } from "./../utils/upload-media.util.ts";
 
 
 export class SellerService {
@@ -118,17 +118,21 @@ export class SellerService {
         return response;
     };
 
-    uploadProfilePicture = async (userId: string, uploadSellerProfilePictureDto: UploadSellerProfilePictureDtoType): Promise<UploadImageSellerResponseDtoType> => {
-        const { profilePicture } = uploadSellerProfilePictureDto;
+    uploadProfilePicture = async (userId: string, profilePicture: Express.Multer.File): Promise<UploadImageSellerResponseDtoType> => {
+        if (!profilePicture) {
+            throw new HttpError(400, "No file provided! Upload a file.");
+        }
+
+        if (!profilePicture.mimetype.startsWith("image/")) {
+            throw new HttpError(400, "Only image files are allowed!");
+        }
 
         const existingSellerById = await this.sellerRepo.findSellerById(userId);
         if (!existingSellerById) {
             throw new HttpError(404, "Seller with the seller id not found!");
         }
 
-        const arrayBuffer = await profilePicture.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const imageUrl = await uploadImage(buffer, profilePicture.name, "leelame/profile-pictures/sellers");
+        const imageUrl = await processSingleUpload(profilePicture, "profile-pictures/sellers");
 
         const updatedSeller = await this.sellerRepo.updateSeller(existingSellerById._id.toString(), {
             profilePictureUrl: imageUrl

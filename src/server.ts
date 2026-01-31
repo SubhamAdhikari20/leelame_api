@@ -110,7 +110,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions)); // Enable CORS with options
 app.use(limiter); // Apply rate limiting to all requests
-app.use(express.static(path.join(__dirname, "public"))); // Serve static files
+app.use("/uploads", express.static(path.join(process.cwd(), "public/uploads")));
+// app.use(express.static(path.join(process.cwd(), "public")));
+// app.use(express.static(path.join(__dirname, "./../public"))); // Serve static files
 
 // ---------------------------- Users Routes -------------------------------
 // Buyers Routes

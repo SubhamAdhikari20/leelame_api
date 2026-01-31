@@ -7,6 +7,7 @@ import { BuyerAuthController } from "./../controllers/auth/buyer-auth.controller
 import { BuyerService } from "./../services/buyer.service.ts";
 import { BuyerController } from "./../controllers/buyer.controller.ts";
 import { BuyerAuthMiddleware } from "./../middleware/auth.middleware.ts";
+import { upload } from "./../middleware/upload.middleware.ts";
 
 
 const userRepo = new UserRepository();
@@ -38,7 +39,7 @@ router.get("/logout", buyerAuthMiddleware.protect, buyerAuthController.logoutBuy
 // Buyer Other CRUDs
 router.get("/:id", buyerAuthMiddleware.protect, buyerController.getCurrentBuyer);
 router.put("/update-profile-details/:id", buyerAuthMiddleware.protect, buyerController.updateBuyerProfileDetails);
-router.put("/upload-profile-picture/:id", buyerAuthMiddleware.protect, buyerController.uploadProfilePicture);
+router.post("/upload-profile-picture/:id", buyerAuthMiddleware.protect, upload.single("profilePicture"), buyerController.uploadProfilePicture);
 router.delete("/delete-account/:id", buyerAuthMiddleware.protect, buyerController.deleteBuyerAccount);
 
 // router.get("/:email", buyerAuthMiddleware.protect, buyerController.getBuyerByEmail);

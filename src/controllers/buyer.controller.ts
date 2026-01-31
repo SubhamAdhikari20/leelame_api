@@ -1,6 +1,6 @@
 // src/controllers/buyer.controller.ts
 import type { Request, Response } from "express";
-import { BuyerResponseDto, UpdateBuyerProfileDetailsDto, UploadImageBuyerResponseDto, UploadBuyerProfilePictureDto } from "./../dtos/buyer.dto.ts";
+import { BuyerResponseDto, UpdateBuyerProfileDetailsDto, UploadImageBuyerResponseDto } from "./../dtos/buyer.dto.ts";
 import { BuyerService } from "./../services/buyer.service.ts";
 import { z } from "zod";
 import { HttpError } from "./../errors/http-error.ts";
@@ -164,31 +164,15 @@ export class BuyerController {
                 });
             }
 
-            const reqFile = await req.file;
-            const file = {
-                profilePicture: reqFile
-            };
-
-            // const file = {
-            //     profilePicture: form.get("profile-picture")
-            // };
-
-            if (!file) {
+            const profilePicture = await req.file;
+            if (!profilePicture) {
                 return res.status(400).json({
                     success: false,
                     message: "No file provided!"
                 });
             }
 
-            const validatedData = UploadBuyerProfilePictureDto.safeParse(file);
-            if (!validatedData.success) {
-                return res.status(400).json({
-                    success: false,
-                    message: z.prettifyError(validatedData.error)
-                });
-            }
-
-            const result = await this.buyerService.uploadProfilePicture(buyerId.toString(), validatedData.data);
+            const result = await this.buyerService.uploadProfilePicture(buyerId.toString(), profilePicture);
             const validatedResponseBuyerData = UploadImageBuyerResponseDto.safeParse(result?.data);
             if (!validatedResponseBuyerData.success) {
                 return res.status(400).json({

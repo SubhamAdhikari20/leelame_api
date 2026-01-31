@@ -1,9 +1,9 @@
 // src/services/buyer.service.ts
-import type { BuyerResponseDtoType, UpdateBuyerProfileDetailsDtoType, UploadBuyerProfilePictureDtoType, UploadImageBuyerResponseDtoType } from "./../dtos/buyer.dto.ts";
+import type { BuyerResponseDtoType, UpdateBuyerProfileDetailsDtoType, UploadImageBuyerResponseDtoType } from "./../dtos/buyer.dto.ts";
 import type { BuyerRepositoryInterface } from "./../interfaces/buyer.repository.interface.ts";
 import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
-import { uploadImage } from "./../middleware/upload-image.middleware.ts";
+import { processSingleUpload } from "./../utils/upload-media.util.ts";
 
 
 export class BuyerService {
@@ -150,17 +150,22 @@ export class BuyerService {
         return response;
     };
 
-    uploadProfilePicture = async (userId: string, uploadProfilePictureDto: UploadBuyerProfilePictureDtoType): Promise<UploadImageBuyerResponseDtoType> => {
-        const { profilePicture } = uploadProfilePictureDto;
+    uploadProfilePicture = async (userId: string, profilePicture: Express.Multer.File): Promise<UploadImageBuyerResponseDtoType> => {
+        if (!profilePicture) {
+            throw new HttpError(400, "No file provided! Upload a file.");
+        }
+
+        if (!profilePicture.mimetype.startsWith("image/")) {
+            throw new HttpError(400, "Only image files are allowed!");
+        }
 
         const existingBuyerById = await this.buyerRepo.findBuyerById(userId);
         if (!existingBuyerById) {
             throw new HttpError(404, "Buyer with the buyer id not found!");
         }
 
-        const arrayBuffer = await profilePicture.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const imageUrl = await uploadImage(buffer, profilePicture.name, "leelame/profile-pictures/buyers");
+        const imageUrl = await processSingleUpload(profilePicture, "profile-pictures/buyers");
+        
 
         const updatedBuyer = await this.buyerRepo.updateBuyer(existingBuyerById._id.toString(), {
             profilePictureUrl: imageUrl

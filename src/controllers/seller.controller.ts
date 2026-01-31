@@ -164,31 +164,15 @@ export class SellerController {
                 });
             }
 
-            const reqFile = await req.file;
-            const file = {
-                profilePicture: reqFile
-            };
-
-            // const file = {
-            //     profilePicture: form.get("profile-picture")
-            // };
-
-            if (!file) {
+            const profilePicture = await req.file;
+            if (!profilePicture) {
                 return res.status(400).json({
                     success: false,
                     message: "No file provided!"
                 });
             }
 
-            const validatedData = UploadSellerProfilePictureDto.safeParse(file);
-            if (!validatedData.success) {
-                return res.status(400).json({
-                    success: false,
-                    message: z.prettifyError(validatedData.error)
-                });
-            }
-
-            const result = await this.sellerService.uploadProfilePicture(sellerId.toString(), validatedData.data);
+            const result = await this.sellerService.uploadProfilePicture(sellerId.toString(), profilePicture);
             const validatedResponseSellerData = UploadImageSellerResponseDto.safeParse(result?.data);
             if (!validatedResponseSellerData.success) {
                 return res.status(400).json({
