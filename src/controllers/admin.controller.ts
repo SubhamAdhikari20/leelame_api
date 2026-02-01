@@ -312,6 +312,40 @@ export class AdminController {
         }
     });
 
+    logoutAdmin = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const tokenUserId = await req.user?._id;
+            if (!tokenUserId || tokenUserId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token Error! Token admin with id not found."
+                });
+            }
+
+            const result = await this.adminService.logoutAdmin(tokenUserId.toString());
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+            });
+        }
+        catch (error: Error | any) {
+            console.error("Error in admin logout controller:", error);
+
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
     // Seller CRUD by admin
     createSellerAccount = asyncHandler(async (req: Request, res: Response) => {
         try {

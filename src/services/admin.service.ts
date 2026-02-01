@@ -4,10 +4,10 @@ import jwt from "jsonwebtoken";
 import type { AdminResponseDtoType, UpdateAdminProfileDetailsDtoType, UploadImageAdminResponseDtoType, CreatedSellerByAdminDtoType } from "./../dtos/admin.dto.ts";
 import type { AdminRepositoryInterface } from "./../interfaces/admin.repository.interface.ts";
 import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
-import { HttpError } from "./../errors/http-error.ts";
-import { processDeleteUpload, processSingleUpload } from "./../utils/upload-media.util.ts";
 import type { AllSellersResponseDtoType, SellerResponseDtoType } from "./../dtos/seller.dto.ts";
 import type { SellerRepositoryInterface } from "./../interfaces/seller.repository.interface.ts";
+import { HttpError } from "./../errors/http-error.ts";
+import { processDeleteUpload, processSingleUpload } from "./../utils/upload-media.util.ts";
 import { startSession } from "mongoose";
 
 
@@ -146,6 +146,9 @@ export class AdminService {
         });
 
         if (!updatedAdmin || !updatedAdmin.profilePictureUrl) {
+            if (profilePicture) {
+                await processDeleteUpload(imageUrl!);
+            }
             throw new HttpError(404, "Admin is not found along with profile picture!");
         }
 
@@ -162,6 +165,7 @@ export class AdminService {
 
     deleteAdminAccount = async (adminId: string): Promise<AdminResponseDtoType | null> => {
         const session = await startSession();
+
         try {
             session.startTransaction();
 
@@ -191,7 +195,7 @@ export class AdminService {
         finally {
             session.endSession();
         }
-    }
+    };
 
     getAdminByEmail = async (email: string): Promise<AdminResponseDtoType | null> => {
         if (!email || email.trim() === "") {
@@ -227,6 +231,26 @@ export class AdminService {
                 profilePictureUrl: existingAdminByBaseUserId.profilePictureUrl,
                 isPermanentlyBanned: exisitingBaseUserByEmail.isPermanentlyBanned,
             }
+        };
+        return response;
+    };
+
+    logoutAdmin = async (adminId: string): Promise<AdminResponseDtoType> => {
+        const adminResposne = await this.getCurrentAdminUser(adminId);
+
+        if (!adminResposne.success) {
+            const response: AdminResponseDtoType = {
+                success: false,
+                message: adminResposne.message,
+                status: adminResposne.status ?? 400,
+            };
+            return response;
+        }
+
+        const response: AdminResponseDtoType = {
+            success: true,
+            message: "Logged out successfully.",
+            status: 200,
         };
         return response;
     };
@@ -324,11 +348,11 @@ export class AdminService {
                 throw new HttpError(404, "Seller with this id not found!");
             }
 
+            await session.commitTransaction();
+
             // JWT Expiry Calculation in seconds for Signup Token
             const secondsInAYear = 365 * 24 * 60 * 60;
             const expiresInSeconds = Number(process.env.JWT_SIGNUP_EXPIRES_IN) * secondsInAYear;
-
-            await session.commitTransaction();
 
             // Generate Token
             const token = jwt.sign(

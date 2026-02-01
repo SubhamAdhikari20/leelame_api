@@ -294,30 +294,4 @@ export class AdminAuthController {
             });
         }
     });
-
-    logoutAdmin = asyncHandler(async (req: Request, res: Response) => {
-        try {
-            const result = await this.adminAuthService.logoutAdmin();
-
-            return res.status(result?.status ?? 200).json({
-                success: result?.success,
-                message: result?.message,
-            });
-        }
-        catch (error: Error | any) {
-            console.error("Error in admin logout controller:", error);
-
-            if (error instanceof HttpError) {
-                return res.status(error.status).json({
-                    success: false,
-                    message: error.message
-                });
-            }
-
-            return res.status(500).json({
-                success: false,
-                message: "Internal Server Error"
-            });
-        }
-    });
 }

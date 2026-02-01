@@ -27,16 +27,16 @@ const router = express.Router();
 
 // Admin Authentication
 router.post("/sign-up", adminAuthController.createAdmin);
-router.put("/verify-account/registration", adminAuthController.verifyOtpForRegistration);
+router.put("/verify-account-registration", adminAuthController.verifyOtpForRegistration);
 
 router.post("/login", adminAuthController.loginAdmin);
 router.put("/send-verification-email-registration", adminAuthController.handleSendEmailForRegistration);
 
 router.put("/forgot-password", adminAuthController.forgotPassword);
-router.put("/verify-account/reset-password", adminAuthController.verifyOtpForResetPassword);
+router.put("/verify-account-reset-password", adminAuthController.verifyOtpForResetPassword);
 router.put("/reset-password", adminAuthController.resetPassword);
 
-router.get("/logout", adminAuthMiddleware.protect, adminAuthController.logoutAdmin);
+router.get("/logout", adminAuthMiddleware.protect, adminController.logoutAdmin);
 
 // Admin Other CRUDs
 router.get("/:id", adminAuthMiddleware.protect, adminController.getCurrentAdmin);

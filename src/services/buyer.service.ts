@@ -3,7 +3,8 @@ import type { BuyerResponseDtoType, UpdateBuyerProfileDetailsDtoType, UploadImag
 import type { BuyerRepositoryInterface } from "./../interfaces/buyer.repository.interface.ts";
 import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
-import { processSingleUpload } from "./../utils/upload-media.util.ts";
+import { processSingleUpload, processDeleteUpload } from "./../utils/upload-media.util.ts";
+import { startSession } from "mongoose";
 
 
 export class BuyerService {
@@ -165,13 +166,16 @@ export class BuyerService {
         }
 
         const imageUrl = await processSingleUpload(profilePicture, "profile-pictures/buyers");
-        
+
 
         const updatedBuyer = await this.buyerRepo.updateBuyer(existingBuyerById._id.toString(), {
             profilePictureUrl: imageUrl
         });
 
         if (!updatedBuyer || !updatedBuyer.profilePictureUrl) {
+            if (profilePicture) {
+                await processDeleteUpload(imageUrl!);
+            }
             throw new HttpError(404, "Buyer is not found along with profile picture!");
         }
 
@@ -187,22 +191,37 @@ export class BuyerService {
     };
 
     deleteBuyerAccount = async (buyerId: string): Promise<BuyerResponseDtoType | null> => {
-        if (!buyerId || buyerId.trim() === "") {
-            throw new HttpError(400, "Buyer id is required!");
-        }
+        const session = await startSession();
 
-        const decodedBuyerId = decodeURIComponent(buyerId);
-        const deletedBuyer = await this.buyerRepo.deleteBuyer(decodedBuyerId);
-        if (!deletedBuyer) {
-            throw new HttpError(400, "Buyer account not deleted!");
-        }
+        try {
+            session.startTransaction();
 
-        const response: BuyerResponseDtoType = {
-            success: true,
-            message: "Buyer account deleted profile successfully.",
-            status: 200
-        };
-        return response;
+            if (!buyerId || buyerId.trim() === "") {
+                throw new HttpError(400, "Buyer id is required!");
+            }
+
+            const decodedBuyerId = decodeURIComponent(buyerId);
+            const deletedBuyer = await this.buyerRepo.deleteBuyer(decodedBuyerId, { session });
+            if (!deletedBuyer) {
+                throw new HttpError(400, "Buyer account not deleted!");
+            }
+
+            await session.commitTransaction();
+
+            const response: BuyerResponseDtoType = {
+                success: true,
+                message: "Buyer account deleted profile successfully.",
+                status: 200
+            };
+            return response;
+        }
+        catch (error: Error | any) {
+            await session.abortTransaction();
+            throw new HttpError(500, error.toString() ?? error.message);
+        }
+        finally {
+            session.endSession();
+        }
     }
 
     getBuyerByEmail = async (email: string): Promise<BuyerResponseDtoType | null> => {
