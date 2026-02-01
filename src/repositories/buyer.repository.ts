@@ -1,32 +1,54 @@
 // src/repositories/buyer.repository.ts
 import type { BuyerRepositoryInterface } from "./../interfaces/buyer.repository.interface.ts";
 import type { Buyer, BuyerDocument, ProviderBuyer } from "./../types/buyer.type.ts";
+import type { ClientSession } from "mongoose";
 import BuyerModel from "./../models/buyer.model.ts";
 import UserModel from "./../models/user.model.ts";
 
 
 export class BuyerRepository implements BuyerRepositoryInterface {
-    createBuyer = async (buyer: Buyer): Promise<BuyerDocument | null> => {
-        const newBuyer = await BuyerModel.create(buyer);
+    createBuyer = async (buyer: Buyer, options?: { session?: ClientSession | null }): Promise<BuyerDocument | null> => {
+        const session = options?.session ?? null;
+        const newBuyer = await new BuyerModel(buyer).save({ session });
         return newBuyer;
     };
 
-    updateBuyer = async (id: string, buyer: Partial<Buyer>): Promise<BuyerDocument | null> => {
-        const updatedBuyer = await BuyerModel.findByIdAndUpdate(id, buyer, { new: true }).lean();
+    updateBuyer = async (id: string, buyer: Partial<Buyer>, options?: { session?: ClientSession | null }): Promise<BuyerDocument | null> => {
+        const session = options?.session ?? null;
+        let query = BuyerModel.findByIdAndUpdate(id, buyer, { new: true });
+        if (session) {
+            query = query.session(session);
+        }
+        const updatedBuyer = await query.lean();
         return updatedBuyer;
     };
 
-    deleteBuyer = async (id: string): Promise<Boolean> => {
+    deleteBuyer = async (id: string, options?: { session?: ClientSession | null }): Promise<Boolean> => {
+        const session = options?.session ?? null;
         const buyer = await this.findBuyerById(id);
         if (!buyer) {
             return false;
         }
-        
-        await BuyerModel.findByIdAndDelete(id);
-        await UserModel.findByIdAndDelete(buyer.baseUserId.toString());
 
-        const deletedBuyer = await this.findBuyerById(id);
-        const deletedBaseUser = await UserModel.findById(buyer.baseUserId.toString()).lean();
+        let deleteBuyerQuery = BuyerModel.findByIdAndDelete(id);
+        if (session) {
+            deleteBuyerQuery = deleteBuyerQuery.session(session);
+        }
+        await deleteBuyerQuery.exec();
+
+        let deleteUserQuery = UserModel.findByIdAndDelete(buyer.baseUserId.toString());
+        if (session) {
+            deleteUserQuery = deleteUserQuery.session(session);
+        }
+        await deleteUserQuery.exec();
+
+        const deletedBuyer = await this.findBuyerById(id, { session });
+
+        let deletedBaseUserQuery = UserModel.findById(buyer.baseUserId.toString());
+        if (session) {
+            deletedBaseUserQuery = deletedBaseUserQuery.session(session);
+        }
+        const deletedBaseUser = await deletedBaseUserQuery.lean();
 
         if (deletedBuyer || deletedBaseUser) {
             return false;
@@ -34,44 +56,73 @@ export class BuyerRepository implements BuyerRepositoryInterface {
         return true;
     };
 
-    findBuyerById = async (id: string): Promise<BuyerDocument | null> => {
-        const buyer = await BuyerModel.findById(id).lean();
-        // const buyer = await BuyerModel.findOne({ _id: id }).lean();
+    findBuyerById = async (id: string, options?: { session?: ClientSession | null }): Promise<BuyerDocument | null> => {
+        const session = options?.session ?? null;
+        let query = BuyerModel.findById(id);
+        if (session) {
+            query = query.session(session);
+        }
+        const buyer = await query.lean();
         return buyer;
     };
 
-    findBuyerByBaseUserId = async (baseUserId: string): Promise<BuyerDocument | null> => {
-        const buyer = await BuyerModel.findOne({ baseUserId: baseUserId }).lean();
-        // const buyer = await BuyerModel.findOne({ userId: new Schema.Types.ObjectId(userId) }).lean();
+    findBuyerByBaseUserId = async (baseUserId: string, options?: { session?: ClientSession | null }): Promise<BuyerDocument | null> => {
+        const session = options?.session ?? null;
+        let query = BuyerModel.findOne({ baseUserId: baseUserId });
+        if (session) {
+            query = query.session(session);
+        }
+        const buyer = await query.lean();
         return buyer;
     };
 
-    findBuyerByEmail = async (email: string): Promise<BuyerDocument | null> => {
-        const user = await UserModel.findOne({ email }).lean();
-        if (!user) {
+    findBuyerByEmail = async (email: string, options?: { session?: ClientSession | null }): Promise<BuyerDocument | null> => {
+        const session = options?.session ?? null;
+        let query = UserModel.findOne({ email });
+        if (session) {
+            query = query.session(session);
+        }
+        const baseUser = await query.lean();
+        if (!baseUser) {
             return null;
         }
-        const buyer = await this.findBuyerByBaseUserId(user._id.toString());
+        const buyer = await this.findBuyerByBaseUserId(baseUser._id.toString());
         return buyer;
     }
 
-    findBuyerByUsername = async (username: string): Promise<BuyerDocument | null> => {
-        const buyer = await BuyerModel.findOne({ username }).lean();
+    findBuyerByUsername = async (username: string, options?: { session?: ClientSession | null }): Promise<BuyerDocument | null> => {
+        const session = options?.session ?? null;
+        let query = BuyerModel.findOne({ username });
+        if (session) {
+            query = query.session(session);
+        }
+        const buyer = await query.lean();
         return buyer;
     };
 
-    findBuyerByContact = async (contact: string): Promise<BuyerDocument | null> => {
-        const buyer = await BuyerModel.findOne({ contact }).lean();
+    findBuyerByContact = async (contact: string, options?: { session?: ClientSession | null }): Promise<BuyerDocument | null> => {
+        const session = options?.session ?? null;
+        let query = BuyerModel.findOne({ contact });
+        if (session) {
+            query = query.session(session);
+        }
+        const buyer = await query.lean();
         return buyer;
     };
 
-    getAllBuyers = async (): Promise<BuyerDocument[] | null> => {
-        const buyers = await BuyerModel.find().lean();
+    getAllBuyers = async (options?: { session?: ClientSession | null }): Promise<BuyerDocument[] | null> => {
+        const session = options?.session ?? null;
+        let query = BuyerModel.find();
+        if (session) {
+            query = query.session(session);
+        }
+        const buyers = await query.lean();
         return buyers;
     };
 
-    createGoogleProviderBuyer = async (buyer: ProviderBuyer): Promise<BuyerDocument | null> => {
-        const newBuyer = await BuyerModel.create(buyer);
+    createGoogleProviderBuyer = async (buyer: ProviderBuyer, options?: { session?: ClientSession | null }): Promise<BuyerDocument | null> => {
+        const session = options?.session ?? null;
+        const newBuyer = await new BuyerModel(buyer).save({ session });
         return newBuyer;
-    }
+    };
 }

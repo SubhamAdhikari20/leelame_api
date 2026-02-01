@@ -7,6 +7,7 @@ import { AdminAuthController } from "./../controllers/auth/admin-auth.controller
 import { AdminService } from "./../services/admin.service.ts";
 import { AdminController } from "./../controllers/admin.controller.ts";
 import { AdminAuthMiddleware } from "./../middleware/auth.middleware.ts";
+import { SellerRepository } from "./../repositories/seller.repository.ts";
 
 
 const userRepo = new UserRepository();
@@ -14,7 +15,10 @@ const adminRepo = new AdminRepository();
 const adminAuthService = new AdminAuthService(userRepo, adminRepo);
 const adminAuthController = new AdminAuthController(adminAuthService);
 
-const adminService = new AdminService(userRepo, adminRepo);
+// seller routes for admin
+const sellerRepo = new SellerRepository();
+
+const adminService = new AdminService(userRepo, adminRepo, sellerRepo);
 const adminController = new AdminController(adminService);
 
 const adminAuthMiddleware = new AdminAuthMiddleware(userRepo, adminRepo);
@@ -40,6 +44,10 @@ router.put("/update-profile-details/:id", adminAuthMiddleware.protect, adminCont
 router.put("/upload-profile-picture/:id", adminAuthMiddleware.protect, adminController.uploadProfilePicture);
 router.delete("/delete-account/:id", adminAuthMiddleware.protect, adminController.deleteAdminAccount);
 
-// router.get("/:email", adminAuthMiddleware.protect, adminController.getAdminByEmail);
+// Seller CRUDs by admin
+router.post("/create-seller-account", adminAuthMiddleware.protect, adminController.createSellerAccount);
+// router.put("/update-seller-details/:sellerId", adminAuthMiddleware.protect, adminController.updateAdminProfileDetails);
+router.get("/get-all-sellers", adminAuthMiddleware.protect, adminController.getAllSellers);
+router.delete("/delete-seller-account/:sellerId", adminAuthMiddleware.protect, adminController.deleteSellerAccount);
 
 export default router;

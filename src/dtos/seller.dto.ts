@@ -9,7 +9,7 @@ export const CreatedSellerDto = z.object({
     fullName: fullNameValidation,
     contact: contactValidation,
     email: emailValidation,
-    password: passwordValidation,
+    // password: passwordValidation,
     role: roleValidation
 });
 export type CreatedSellerDtoType = z.infer<typeof CreatedSellerDto>;
@@ -17,7 +17,8 @@ export type CreatedSellerDtoType = z.infer<typeof CreatedSellerDto>;
 // Verify OTP for Registration DTO
 export const VerifyOtpForRegistrationDto = z.object({
     email: emailValidation,
-    otp: otpValidation
+    otp: otpValidation,
+    password: passwordValidation,
 });
 export type VerifyOtpForRegistrationDtoType = z.infer<typeof VerifyOtpForRegistrationDto>;
 
@@ -119,4 +120,12 @@ export type UploadImageSellerResponseDtoType = {
     message: string;
     status?: number | null;
     data?: z.infer<typeof UploadImageSellerResponseDto> | null;
+};
+
+// All the sellers response
+export type AllSellersResponseDtoType = {
+    success: boolean;
+    message: string;
+    status?: number | null;
+    users?: z.infer<typeof SellerResponseDto>[] | null;
 };

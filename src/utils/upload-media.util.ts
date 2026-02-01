@@ -1,7 +1,7 @@
 // src/utils/upload-media.util.ts
 import path from "path";
+import fs from "fs";
 import type { Express } from "express";
-import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
 import streamifier from "streamifier";
 import { cloudinary, MEDIA_STORAGE_PROVIDER, BASE_URL } from "./../config/cloudinary.config.ts";
@@ -147,5 +147,87 @@ export const processMultipleUploads = async (
     }
     else {
         throw new HttpError(500, "Invalid storage provider configuration.");
+    }
+};
+
+// Helper to extract Cloudinary public_id from secure_url
+const getCloudinaryPublicId = (url: string): string | null => {
+    try {
+        const parsed = new URL(url);
+        if (!parsed.hostname.includes("cloudinary.com")) {
+            return null;
+        }
+
+        // Match the part after /upload/ (optionally after version v123/)
+        const match = parsed.pathname.match(/\/(?:image|video|raw)\/upload\/(?:v\d+\/)?(.+)/);
+        if (!match) {
+            return null;
+        }
+
+        // Remove file extension (Cloudinary public_id does not include extension)
+        const fullPath = match[1];
+        if (!fullPath) {
+            return null;
+        }
+
+        return fullPath.replace(/\.\w+$/, "");
+    } catch {
+        return null;
+    }
+};
+
+// Helper to get absolute local file path from relative URL
+const getLocalFilePath = (url: string): string | null => {
+    // Local URLs are relative and start with /
+    if (!url.startsWith("/") || url.includes("://")) {
+        return null;
+    }
+
+    const PUBLIC_DIR = path.join(process.cwd(), "public");
+    const cleanPath = url.replace(/^\/+/, ""); // Remove leading slashes
+    const fullPath = path.join(PUBLIC_DIR, cleanPath);
+
+    return fullPath;
+};
+
+// New function: Delete uploaded media (used for rollback or replacing old profile pictures)
+export const processDeleteUpload = async (url: string): Promise<void> => {
+    if (!url || typeof url !== "string") {
+        throw new HttpError(400, "Invalid url!");;
+    }
+
+    try {
+        if (MEDIA_STORAGE_PROVIDER === "cloudinary") {
+            const publicId = getCloudinaryPublicId(url);
+            if (!publicId) {
+                throw new HttpError(400, `Could not extract public_id from Cloudinary URL for deletion: ${url}`);
+            }
+
+            const result = await cloudinary.uploader.destroy(publicId, {
+                invalidate: true,
+                resource_type: "image",
+            });
+
+            if (result?.result === "not found" || result?.result === "missing") {
+                const resVideo = await cloudinary.uploader.destroy(publicId, {
+                    invalidate: true,
+                    resource_type: "video",
+                });
+                if (resVideo?.result === "not found" || resVideo?.result === "missing") {
+                    throw new HttpError(400, "The media couldn't be deleted.");
+                }
+            }
+        }
+        else if (MEDIA_STORAGE_PROVIDER === "local") {
+            const filePath = getLocalFilePath(url);
+            if (!filePath) {
+                throw new HttpError(400, `Invalid local URL for deletion: ${url}`);
+            }
+
+            await fs.promises.unlink(filePath);
+        }
+    }
+    catch (error: Error | any) {
+        throw new HttpError(500, error.message ?? "Failed to delete uploaded file");
     }
 };

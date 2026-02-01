@@ -90,6 +90,18 @@ export const UploadAdminProfilePictureDto = z.object({
 });
 export type UploadAdminProfilePictureDtoType = z.infer<typeof UploadAdminProfilePictureDto>;
 
+// ----------------------------- Seller User CTUDs DTOs By admin-------------------------------
+// Create Seller DTO
+export const CreatedSellerByAdminDto = z.object({
+    fullName: fullNameValidation,
+    contact: contactValidation,
+    email: emailValidation,
+    password: passwordValidation,
+    role: roleValidation,
+    // profilePictureUrl: z.string().nullish(),
+});
+export type CreatedSellerByAdminDtoType = z.infer<typeof CreatedSellerByAdminDto>;
+
 
 // Admin Response
 export const AdminResponseDto = z.object({

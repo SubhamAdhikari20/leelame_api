@@ -39,7 +39,7 @@ export class SellerAuthService {
     };
 
     createSeller = async (sellerData: CreatedSellerDtoType): Promise<SellerResponseDtoType | null> => {
-        const { fullName, contact, email, password, role } = sellerData;
+        const { fullName, contact, email, role } = sellerData;
 
         // Check existing user
         const existingUserByEmail = await this.userRepo.findUserByEmail(email);
@@ -51,8 +51,6 @@ export class SellerAuthService {
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const salt = bcrypt.genSaltSync(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
         const expiryDate = new Date();
         expiryDate.setMinutes(expiryDate.getMinutes() + 10); // Add 10 mins from 'now'
 
@@ -95,7 +93,6 @@ export class SellerAuthService {
                 sellerProfile = await this.sellerRepo.updateSeller(sellerProfile._id.toString(), {
                     fullName,
                     contact,
-                    password: hashedPassword,
                 });
             }
         }
@@ -118,7 +115,6 @@ export class SellerAuthService {
                 baseUserId: newUser._id.toString(),
                 fullName,
                 contact,
-                password: hashedPassword,
             });
 
             isNewUserCreated = true;
