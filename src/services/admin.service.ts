@@ -8,7 +8,6 @@ import type { AllSellersResponseDtoType, SellerResponseDtoType } from "./../dtos
 import type { SellerRepositoryInterface } from "./../interfaces/seller.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
 import { processDeleteUpload, processSingleUpload } from "./../utils/upload-media.util.ts";
-import { startSession } from "mongoose";
 
 
 export class AdminService {
@@ -44,7 +43,7 @@ export class AdminService {
 
         const response: AdminResponseDtoType = {
             success: true,
-            message: "Admin profile details updated successfully.",
+            message: "Admin data fetched successfully.",
             status: 200,
             user: {
                 _id: existingAdminById._id.toString(),
@@ -164,37 +163,22 @@ export class AdminService {
     };
 
     deleteAdminAccount = async (adminId: string): Promise<AdminResponseDtoType | null> => {
-        const session = await startSession();
-
-        try {
-            session.startTransaction();
-
-            if (!adminId || adminId.trim() === "") {
-                throw new HttpError(400, "Admin id is required!");
-            }
-
-            const decodedAdminId = decodeURIComponent(adminId);
-            const deletedAdmin = await this.adminRepo.deleteAdmin(decodedAdminId, { session });
-            if (!deletedAdmin) {
-                throw new HttpError(400, "Admin account not deleted!");
-            }
-
-            await session.commitTransaction();
-
-            const response: AdminResponseDtoType = {
-                success: true,
-                message: "Admin account deleted profile successfully.",
-                status: 200
-            };
-            return response;
+        if (!adminId || adminId.trim() === "") {
+            throw new HttpError(400, "Admin id is required!");
         }
-        catch (error: Error | any) {
-            await session.abortTransaction();
-            throw new HttpError(500, error.toString() ?? error.message);
+
+        const decodedAdminId = decodeURIComponent(adminId);
+        const deletedAdmin = await this.adminRepo.deleteAdmin(decodedAdminId);
+        if (!deletedAdmin) {
+            throw new HttpError(400, "Admin account not deleted!");
         }
-        finally {
-            session.endSession();
-        }
+
+        const response: AdminResponseDtoType = {
+            success: true,
+            message: "Admin account deleted profile successfully.",
+            status: 200
+        };
+        return response;
     };
 
     getAdminByEmail = async (email: string): Promise<AdminResponseDtoType | null> => {
@@ -256,139 +240,129 @@ export class AdminService {
     };
 
     // Seller Creation
-    createSellerAccount = async (sellerData: CreatedSellerByAdminDtoType, profilePicture?: Express.Multer.File): Promise<SellerResponseDtoType | null> => {
-        const session = await startSession();
+    createSellerAccount = async (sellerData: CreatedSellerByAdminDtoType, profilePicture?: Express.Multer.File, imageSubFolder?: string): Promise<SellerResponseDtoType | null> => {
         let profilePictureUrl;
 
-        try {
-            if (profilePicture) {
-                if (!profilePicture.mimetype.startsWith("image/")) {
-                    throw new HttpError(400, "Only image files are allowed!");
-                }
-                profilePictureUrl = await processSingleUpload(profilePicture, "profile-pictures/sellers");
+        if (profilePicture) {
+            if (!profilePicture.mimetype.startsWith("image/")) {
+                throw new HttpError(400, "Only image files are allowed!");
+            }
+            profilePictureUrl = await processSingleUpload(profilePicture, imageSubFolder || "profile-pictures/sellers");
+        }
+
+        const { fullName, contact, email, password, role } = sellerData;
+
+        // Check existing user
+        const existingUserByEmail = await this.userRepo.findUserByEmail(email);
+
+        // Check for existing contact number
+        const existingSellerByContact = await this.sellerRepo.findSellerByContact(contact);
+        if (existingSellerByContact && existingUserByEmail?.isVerified === true) {
+            throw new HttpError(400, "Contact already exists!");
+        }
+
+        const salt = bcrypt.genSaltSync(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        let newUser;
+        let sellerProfile;
+
+        // Check for existing email
+        if (existingUserByEmail) {
+            if (existingUserByEmail?.isVerified) {
+                throw new HttpError(400, "Email already registered!");
             }
 
-            session.startTransaction();
+            // Update existing unverified user
+            newUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
+                isVerified: true,
+                role,
+            });
 
-            const { fullName, contact, email, password, role } = sellerData;
-
-            // Check existing user
-            const existingUserByEmail = await this.userRepo.findUserByEmail(email, { session });
-
-            // Check for existing contact number
-            const existingSellerByContact = await this.sellerRepo.findSellerByContact(contact, { session });
-            if (existingSellerByContact && existingUserByEmail?.isVerified === true) {
-                throw new HttpError(400, "Contact already exists!");
+            if (!newUser) {
+                throw new HttpError(404, "User with this id not found!");
             }
 
-            const salt = bcrypt.genSaltSync(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
+            // If sellerProfile does not exist for this user, create one
+            sellerProfile = await this.sellerRepo.findSellerById(newUser._id.toString());
 
-            let newUser;
-            let sellerProfile;
-
-            // Check for existing email
-            if (existingUserByEmail) {
-                if (existingUserByEmail?.isVerified) {
-                    throw new HttpError(400, "Email already registered!");
-                }
-
-                // Update existing unverified user
-                newUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
-                    isVerified: true,
-                    role,
-                }, { session });
-
-                if (!newUser) {
-                    throw new HttpError(404, "User with this id not found!");
-                }
-
-                // If sellerProfile does not exist for this user, create one
-                sellerProfile = await this.sellerRepo.findSellerById(newUser._id.toString(), { session });
-
-                if (!sellerProfile) {
-                    sellerProfile = await this.sellerRepo.createSeller({
-                        baseUserId: newUser._id.toString(),
-                        fullName,
-                        contact,
-                        password: hashedPassword,
-                    });
-                }
-                else {
-                    // Update if exists
-                    sellerProfile = await this.sellerRepo.updateSeller(sellerProfile._id.toString(), {
-                        fullName,
-                        contact,
-                        password: hashedPassword,
-                    }, { session });
-                }
-            }
-            else {
-                // Create new user
-                newUser = await this.userRepo.createUser({
-                    email,
-                    role,
-                    isVerified: true,
-                    isPermanentlyBanned: false
-                }, { session });
-
-                if (!newUser) {
-                    throw new HttpError(404, "User with this id not found!");
-                }
-
+            if (!sellerProfile) {
                 sellerProfile = await this.sellerRepo.createSeller({
                     baseUserId: newUser._id.toString(),
                     fullName,
                     contact,
                     password: hashedPassword,
-                }, { session });
+                    profilePictureUrl
+                });
             }
-
-            if (!sellerProfile) {
-                throw new HttpError(404, "Seller with this id not found!");
+            else {
+                // Update if exists
+                sellerProfile = await this.sellerRepo.updateSeller(sellerProfile._id.toString(), {
+                    fullName,
+                    contact,
+                    password: hashedPassword,
+                });
             }
-
-            await session.commitTransaction();
-
-            // JWT Expiry Calculation in seconds for Signup Token
-            const secondsInAYear = 365 * 24 * 60 * 60;
-            const expiresInSeconds = Number(process.env.JWT_SIGNUP_EXPIRES_IN) * secondsInAYear;
-
-            // Generate Token
-            const token = jwt.sign(
-                { _id: newUser._id.toString(), baseUserId: newUser._id.toString() || sellerProfile.baseUserId.toString(), email: newUser.email, contact: sellerProfile.contact, role: newUser.role },
-                process.env.JWT_SECRET!,
-                { expiresIn: expiresInSeconds }
-            );
-
-            const respose: SellerResponseDtoType = {
-                success: true,
-                message: "Seller registered successfully.",
-                status: 201,
-                token,
-                user: {
-                    _id: sellerProfile._id.toString(),
-                    email: newUser.email,
-                    role: newUser.role,
-                    isVerified: newUser.isVerified,
-                    baseUserId: sellerProfile.baseUserId.toString(),
-                    fullName: sellerProfile.fullName,
-                    contact: sellerProfile.contact,
-                    isPermanentlyBanned: newUser.isPermanentlyBanned,
-                }
-            };
-            return respose;
         }
-        catch (error: Error | any) {
-            await session.abortTransaction();
+        else {
+            // Create new user
+            newUser = await this.userRepo.createUser({
+                email,
+                role,
+                isVerified: true,
+                isPermanentlyBanned: false
+            });
+
+            if (!newUser) {
+                throw new HttpError(404, "User with this id not found!");
+            }
+
+            sellerProfile = await this.sellerRepo.createSeller({
+                baseUserId: newUser._id.toString(),
+                fullName,
+                contact,
+                password: hashedPassword,
+                profilePictureUrl
+            });
+        }
+
+        if (!sellerProfile) {
             if (profilePicture) {
                 await processDeleteUpload(profilePictureUrl!);
             }
-            throw new HttpError(500, error.toString() ?? error.message);
+            await this.userRepo.deleteUser(newUser._id.toString());
+            throw new HttpError(404, "Seller with this id not found!");
         }
-        finally {
-            session.endSession();
-        }
+
+        // JWT Expiry Calculation in seconds for Signup Token
+        const secondsInAYear = 365 * 24 * 60 * 60;
+        const expiresInSeconds = Number(process.env.JWT_SIGNUP_EXPIRES_IN) * secondsInAYear;
+
+        // Generate Token
+        const token = jwt.sign(
+            { _id: newUser._id.toString(), baseUserId: newUser._id.toString() || sellerProfile.baseUserId.toString(), email: newUser.email, contact: sellerProfile.contact, role: newUser.role },
+            process.env.JWT_SECRET!,
+            { expiresIn: expiresInSeconds }
+        );
+
+        const respose: SellerResponseDtoType = {
+            success: true,
+            message: "Seller registered successfully.",
+            status: 201,
+            token,
+            user: {
+                _id: sellerProfile._id.toString(),
+                email: newUser.email,
+                role: newUser.role,
+                isVerified: newUser.isVerified,
+                baseUserId: sellerProfile.baseUserId.toString(),
+                fullName: sellerProfile.fullName,
+                contact: sellerProfile.contact,
+                profilePictureUrl: sellerProfile.profilePictureUrl,
+                isPermanentlyBanned: newUser.isPermanentlyBanned,
+            }
+        };
+        return respose;
     };
 
     getAllSellers = async (): Promise<AllSellersResponseDtoType | null> => {
@@ -426,7 +400,7 @@ export class AdminService {
 
         const respose: AllSellersResponseDtoType = {
             success: true,
-            message: "Seller registered successfully.",
+            message: "All sellers fetched successfully.",
             status: 200,
             users: users
         };

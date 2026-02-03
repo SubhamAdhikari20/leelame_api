@@ -7,7 +7,6 @@ import type { SellerRepositoryInterface } from "./../../interfaces/seller.reposi
 import { sendVerificationEmail } from "../../helpers/send-registration-verification-email.ts";
 import { sendResetPasswordVerificationEmail } from "../../helpers/send-reset-password-verification-email.ts";
 import { HttpError } from "./../../errors/http-error.ts";
-import { startSession } from "mongoose";
 
 
 export class SellerAuthService {
@@ -40,158 +39,144 @@ export class SellerAuthService {
     };
 
     createSeller = async (sellerData: CreatedSellerDtoType): Promise<SellerResponseDtoType | null> => {
-        const session = await startSession();
+        const { fullName, contact, email, role } = sellerData;
 
-        try {
-            session.startTransaction();
-            
-            const { fullName, contact, email, role } = sellerData;
+        // Check existing user
+        const existingUserByEmail = await this.userRepo.findUserByEmail(email);
 
-            // Check existing user
-            const existingUserByEmail = await this.userRepo.findUserByEmail(email, { session });
+        // Check for existing contact number
+        const existingSellerByContact = await this.sellerRepo.findSellerByContact(contact);
+        if (existingSellerByContact && existingUserByEmail?.isVerified === true) {
+            throw new HttpError(400, "Contact already exists!");
+        }
 
-            // Check for existing contact number
-            const existingSellerByContact = await this.sellerRepo.findSellerByContact(contact, { session });
-            if (existingSellerByContact && existingUserByEmail?.isVerified === true) {
-                throw new HttpError(400, "Contact already exists!");
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiryDate = new Date();
+        expiryDate.setMinutes(expiryDate.getMinutes() + 10); // Add 10 mins from 'now'
+
+        let newUser;
+        let sellerProfile;
+        let isNewUserCreated = false;
+        let isNewProfileCreated = false;
+
+        // Check for existing email
+        if (existingUserByEmail) {
+            if (existingUserByEmail?.isVerified) {
+                throw new HttpError(400, "Email already registered!");
             }
 
-            const otp = Math.floor(100000 + Math.random() * 900000).toString();
-            const expiryDate = new Date();
-            expiryDate.setMinutes(expiryDate.getMinutes() + 10); // Add 10 mins from 'now'
+            // Update existing unverified user
+            newUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
+                verifyCode: otp,
+                verifyCodeExpiryDate: expiryDate,
+                role,
+            });
 
-            let newUser;
-            let sellerProfile;
-            let isNewUserCreated = false;
-            let isNewProfileCreated = false;
-
-            // Check for existing email
-            if (existingUserByEmail) {
-                if (existingUserByEmail?.isVerified) {
-                    throw new HttpError(400, "Email already registered!");
-                }
-
-                // Update existing unverified user
-                newUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
-                    verifyCode: otp,
-                    verifyCodeExpiryDate: expiryDate,
-                    role,
-                }, { session });
-
-                if (!newUser) {
-                    throw new HttpError(404, "User with this id not found!");
-                }
-
-                // If sellerProfile does not exist for this user, create one
-                sellerProfile = await this.sellerRepo.findSellerById(newUser._id.toString(), { session });
-
-                if (!sellerProfile) {
-                    sellerProfile = await this.sellerRepo.createSeller({
-                        baseUserId: newUser._id.toString(),
-                        fullName,
-                        contact,
-                    }, { session });
-
-                    isNewProfileCreated = true;
-                }
-                else {
-                    // Update if exists
-                    sellerProfile = await this.sellerRepo.updateSeller(sellerProfile._id.toString(), {
-                        fullName,
-                        contact,
-                    }, { session });
-                }
+            if (!newUser) {
+                throw new HttpError(404, "User with this id not found!");
             }
-            else {
-                // Create new user
-                newUser = await this.userRepo.createUser({
-                    email,
-                    role,
-                    isVerified: false,
-                    verifyCode: otp,
-                    verifyCodeExpiryDate: expiryDate,
-                    isPermanentlyBanned: false
-                }, { session });
 
-                if (!newUser) {
-                    throw new HttpError(404, "User with this id not found!");
-                }
+            // If sellerProfile does not exist for this user, create one
+            sellerProfile = await this.sellerRepo.findSellerById(newUser._id.toString());
 
+            if (!sellerProfile) {
                 sellerProfile = await this.sellerRepo.createSeller({
                     baseUserId: newUser._id.toString(),
                     fullName,
                     contact,
-                }, { session });
+                });
 
-                isNewUserCreated = true;
+                isNewProfileCreated = true;
+            }
+            else {
+                // Update if exists
+                sellerProfile = await this.sellerRepo.updateSeller(sellerProfile._id.toString(), {
+                    fullName,
+                    contact,
+                });
+            }
+        }
+        else {
+            // Create new user
+            newUser = await this.userRepo.createUser({
+                email,
+                role,
+                isVerified: false,
+                verifyCode: otp,
+                verifyCodeExpiryDate: expiryDate,
+                isPermanentlyBanned: false
+            });
+
+            if (!newUser) {
+                throw new HttpError(404, "User with this id not found!");
             }
 
-            if (!sellerProfile) {
-                throw new HttpError(404, "Seller with this id not found!");
+            sellerProfile = await this.sellerRepo.createSeller({
+                baseUserId: newUser._id.toString(),
+                fullName,
+                contact,
+            });
+
+            isNewUserCreated = true;
+        }
+
+        if (!sellerProfile) {
+            await this.userRepo.deleteUser(newUser._id.toString());
+            throw new HttpError(404, "Seller with this id not found!");
+        }
+
+        // Send verification email
+        const emailResponse = await sendVerificationEmail(fullName, email, otp);
+        if (!emailResponse.success) {
+            // Rollback user creation if email sending fails
+            if (isNewUserCreated) {
+                await this.userRepo.deleteUser(newUser._id.toString());
+                await this.sellerRepo.deleteSeller(sellerProfile._id.toString());
             }
+            else {
+                // If it was an existing unverified user, clear verification fields
+                newUser = await this.userRepo.updateUser(newUser._id.toString(), {
+                    verifyCode: null,
+                    verifyCodeExpiryDate: null,
+                    role,
+                });
 
-            // Send verification email
-            const emailResponse = await sendVerificationEmail(fullName, email, otp);
-            if (!emailResponse.success) {
-                // Rollback user creation if email sending fails
-                if (isNewUserCreated) {
-                    await this.userRepo.deleteUser(newUser._id.toString(), { session });
-                    await this.sellerRepo.deleteSeller(sellerProfile._id.toString(), { session });
+                // If profile was updated (not new), we don't revert changes for simplicity
+                if (isNewProfileCreated) {
+                    await this.sellerRepo.deleteSeller(sellerProfile._id.toString());
                 }
-                else {
-                    // If it was an existing unverified user, clear verification fields
-                    newUser = await this.userRepo.updateUser(newUser._id.toString(), {
-                        verifyCode: null,
-                        verifyCodeExpiryDate: null,
-                        role,
-                    }, { session });
-
-                    // If profile was updated (not new), we don't revert changes for simplicity
-                    if (isNewProfileCreated) {
-                        await this.sellerRepo.deleteSeller(sellerProfile._id.toString(), { session });
-                    }
-                }
-                throw new HttpError(500, emailResponse.message ?? "Failed to send verification email!");
             }
-
-            await session.commitTransaction();
-
-            // JWT Expiry Calculation in seconds for Signup Token
-            const secondsInAYear = 365 * 24 * 60 * 60;
-            const expiresInSeconds = Number(process.env.JWT_SIGNUP_EXPIRES_IN) * secondsInAYear;
-
-            // Generate Token
-            const token = jwt.sign(
-                { _id: newUser._id.toString(), baseUserId: newUser._id.toString() || sellerProfile.baseUserId.toString(), email: newUser.email, contact: sellerProfile.contact, role: newUser.role },
-                process.env.JWT_SECRET!,
-                { expiresIn: expiresInSeconds }
-            );
-
-            const respose: SellerResponseDtoType = {
-                success: true,
-                message: "Seller registered successfully. Please verify your email.",
-                status: 201,
-                token,
-                user: {
-                    _id: sellerProfile._id.toString(),
-                    email: newUser.email,
-                    role: newUser.role,
-                    isVerified: newUser.isVerified,
-                    baseUserId: sellerProfile.baseUserId.toString(),
-                    fullName: sellerProfile.fullName,
-                    contact: sellerProfile.contact,
-                    isPermanentlyBanned: newUser.isPermanentlyBanned,
-                }
-            };
-            return respose;
+            throw new HttpError(500, emailResponse.message ?? "Failed to send verification email!");
         }
-        catch (error: Error | any) {
-            await session.abortTransaction();
-            throw new HttpError(500, error.toString() ?? error.message);
-        }
-        finally {
-            session.endSession();
-        }
+
+        // JWT Expiry Calculation in seconds for Signup Token
+        const secondsInAYear = 365 * 24 * 60 * 60;
+        const expiresInSeconds = Number(process.env.JWT_SIGNUP_EXPIRES_IN) * secondsInAYear;
+
+        // Generate Token
+        const token = jwt.sign(
+            { _id: newUser._id.toString(), baseUserId: newUser._id.toString() || sellerProfile.baseUserId.toString(), email: newUser.email, contact: sellerProfile.contact, role: newUser.role },
+            process.env.JWT_SECRET!,
+            { expiresIn: expiresInSeconds }
+        );
+
+        const respose: SellerResponseDtoType = {
+            success: true,
+            message: "Seller registered successfully. Please verify your email.",
+            status: 201,
+            token,
+            user: {
+                _id: sellerProfile._id.toString(),
+                email: newUser.email,
+                role: newUser.role,
+                isVerified: newUser.isVerified,
+                baseUserId: sellerProfile.baseUserId.toString(),
+                fullName: sellerProfile.fullName,
+                contact: sellerProfile.contact,
+                isPermanentlyBanned: newUser.isPermanentlyBanned,
+            }
+        };
+        return respose;
     };
 
     verifyOtpForRegistration = async (verifyOtpForRegistrationDto: VerifyOtpForRegistrationDtoType): Promise<SellerResponseDtoType> => {

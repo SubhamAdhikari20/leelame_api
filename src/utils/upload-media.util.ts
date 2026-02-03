@@ -77,30 +77,49 @@ export const processSingleUpload = async (
     file: Express.Multer.File,
     subFolder: string = ""
 ): Promise<string> => {
+    // if (!file?.buffer) {
+    //     throw new HttpError(400, "No file buffer available.");
+    // }
+
+    let baseDir = "other";
+    if (file.mimetype.startsWith("image/")) {
+        baseDir = "images";
+    } else if (file.mimetype.startsWith("video/")) {
+        baseDir = "videos";
+    }
+
+    const subFolderClean = subFolder.replace(/^\/+|\/+$/g, "").trim();
+
     if (MEDIA_STORAGE_PROVIDER === "local") {
+        // const uploadDir = path.join(process.cwd(), "public/uploads", baseDir, subFolderClean);
+        // await fs.promises.mkdir(uploadDir, { recursive: true });
+
+        // const ext = path.extname(file.originalname);
+        // let prefix = "";
+        // if (file.fieldname === "profilePicture") {
+        //     prefix = "pro-pic-";
+        // } else if (file.fieldname === "productImage") {
+        //     prefix = "prod-img-";
+        // }
+
+        // const filename = `${prefix}${uuidv4()}${ext}`;
+        // const fullPath = path.join(uploadDir, filename);
+        // await fs.promises.writeFile(fullPath, file.buffer);
+
+        // const relativePath = path.relative(path.join(process.cwd(), "public"), fullPath);
+        // const urlPath = relativePath.split(path.sep).join("/");
+        // return `/${urlPath}`;
+
+
         // For local, construct the public URL
-
-        // const __dirname = path.dirname(fileURLToPath(import.meta.url));
-        // const relativePath = file.path.replace(path.join(__dirname, "./../../public"), "");
-        // return `${BASE_URL}${relativePath}`;
-
         const PUBLIC_DIR = path.join(process.cwd(), "public"); // root project
         const relativePath = path.relative(PUBLIC_DIR, file.path);
         const urlPath = relativePath.split(path.sep).join("/"); // normalize slashes to forward
-        const baseUrl = (BASE_URL || "").replace(/\/$/, ""); // remove trailing slash from BASE_URL
         const publicUrl = `/${urlPath.replace(/^\/+/, "")}`; // ensure single slash
-        // const publicUrl = `${baseUrl}/${urlPath.replace(/^\/+/, "")}`; // ensure single slash
         return publicUrl;
     }
     else if (MEDIA_STORAGE_PROVIDER === "cloudinary") {
-        // For Cloudinary, upload buffer
-        let baseDir = "other";
-        if (file.mimetype.startsWith("image/")) {
-            baseDir = "images";
-        } else if (file.mimetype.startsWith("video/")) {
-            baseDir = "videos";
-        }
-        const fullFolder = `leelame/uploads/${baseDir}/${subFolder}`.replace(/^\/+|\/+$/g, "");
+        const fullFolder = `leelame/uploads/${baseDir}/${subFolderClean}`.replace(/^\/+|\/+$/g, "");
         return uploadMedia(file.buffer, file.originalname, file.mimetype, fullFolder);
     }
     else {
@@ -127,6 +146,40 @@ export const processMultipleUploads = async (
             const publicUrl = `${baseUrl}/${urlPath.replace(/^\/+/, "")}`;
             return publicUrl;
         });
+
+        // return Promise.all(files.map(async (file) => {
+        //     if (!file?.buffer) {
+        //         throw new HttpError(400, "No file buffer available.");
+        //     }
+
+        //     let baseDir = "other";
+        //     if (file.mimetype.startsWith("image/")) {
+        //         baseDir = "images";
+        //     } else if (file.mimetype.startsWith("video/")) {
+        //         baseDir = "videos";
+        //     }
+
+        //     const subFolderClean = subFolder.replace(/^\/+|\/+$/g, "").trim();
+
+        //     const uploadDir = path.join(process.cwd(), "public/uploads", baseDir, subFolderClean);
+        //     await fs.promises.mkdir(uploadDir, { recursive: true });
+
+        //     const ext = path.extname(file.originalname);
+        //     let prefix = "";
+        //     if (file.fieldname === "profilePicture") {
+        //         prefix = "pro-pic-";
+        //     } else if (file.fieldname === "productImage") {
+        //         prefix = "prod-img-";
+        //     }
+
+        //     const filename = `${prefix}${uuidv4()}${ext}`;
+        //     const fullPath = path.join(uploadDir, filename);
+        //     await fs.promises.writeFile(fullPath, file.buffer);
+
+        //     const relativePath = path.relative(path.join(process.cwd(), "public"), fullPath);
+        //     const urlPath = relativePath.split(path.sep).join("/");
+        //     return `/${urlPath}`;
+        // }));
     }
     else if (MEDIA_STORAGE_PROVIDER === "cloudinary") {
         // For Cloudinary, upload buffers

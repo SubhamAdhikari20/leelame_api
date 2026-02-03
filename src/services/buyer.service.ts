@@ -4,7 +4,6 @@ import type { BuyerRepositoryInterface } from "./../interfaces/buyer.repository.
 import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
 import { processSingleUpload, processDeleteUpload } from "./../utils/upload-media.util.ts";
-import { startSession } from "mongoose";
 
 
 export class BuyerService {
@@ -191,37 +190,22 @@ export class BuyerService {
     };
 
     deleteBuyerAccount = async (buyerId: string): Promise<BuyerResponseDtoType | null> => {
-        const session = await startSession();
-
-        try {
-            session.startTransaction();
-
-            if (!buyerId || buyerId.trim() === "") {
-                throw new HttpError(400, "Buyer id is required!");
-            }
-
-            const decodedBuyerId = decodeURIComponent(buyerId);
-            const deletedBuyer = await this.buyerRepo.deleteBuyer(decodedBuyerId, { session });
-            if (!deletedBuyer) {
-                throw new HttpError(400, "Buyer account not deleted!");
-            }
-
-            await session.commitTransaction();
-
-            const response: BuyerResponseDtoType = {
-                success: true,
-                message: "Buyer account deleted profile successfully.",
-                status: 200
-            };
-            return response;
+        if (!buyerId || buyerId.trim() === "") {
+            throw new HttpError(400, "Buyer id is required!");
         }
-        catch (error: Error | any) {
-            await session.abortTransaction();
-            throw new HttpError(500, error.toString() ?? error.message);
+
+        const decodedBuyerId = decodeURIComponent(buyerId);
+        const deletedBuyer = await this.buyerRepo.deleteBuyer(decodedBuyerId);
+        if (!deletedBuyer) {
+            throw new HttpError(400, "Buyer account not deleted!");
         }
-        finally {
-            session.endSession();
-        }
+
+        const response: BuyerResponseDtoType = {
+            success: true,
+            message: "Buyer account deleted profile successfully.",
+            status: 200
+        };
+        return response;
     }
 
     getBuyerByEmail = async (email: string): Promise<BuyerResponseDtoType | null> => {

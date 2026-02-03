@@ -7,7 +7,6 @@ import type { UserRepositoryInterface } from "../../interfaces/user.repository.i
 import { sendVerificationEmail } from "../../helpers/send-registration-verification-email.ts";
 import { sendResetPasswordVerificationEmail } from "../../helpers/send-reset-password-verification-email.ts";
 import { HttpError } from "../../errors/http-error.ts";
-import { startSession } from "mongoose";
 
 
 export class BuyerAuthService {
@@ -45,100 +44,58 @@ export class BuyerAuthService {
     };
 
     createBuyer = async (buyerData: CreatedBuyerDtoType): Promise<BuyerResponseDtoType | null> => {
-        const session = await startSession();
+        const { fullName, email, username, contact, password, terms, role } = buyerData;
 
-        try {
-            session.startTransaction();
+        // Check existing user
+        const existingUserByEmail = await this.userRepo.findUserByEmail(email);
 
-            const { fullName, email, username, contact, password, terms, role } = buyerData;
+        // Check for existing username
+        const existingBuyerByUsername = await this.buyerRepo.findBuyerByUsername(username);
+        if (
+            existingBuyerByUsername &&
+            existingUserByEmail?.isVerified === true
+        ) {
+            throw new HttpError(400, "Username already exists!");
+        }
 
-            // Check existing user
-            const existingUserByEmail = await this.userRepo.findUserByEmail(email, { session });
+        // Check for existing contact number
+        const existingBuyerByContact = await this.buyerRepo.findBuyerByContact(contact);
+        if (existingBuyerByContact && existingUserByEmail?.isVerified === true) {
+            throw new HttpError(400, "Contact already exists!");
+        }
 
-            // Check for existing username
-            const existingBuyerByUsername = await this.buyerRepo.findBuyerByUsername(username, { session });
-            if (
-                existingBuyerByUsername &&
-                existingUserByEmail?.isVerified === true
-            ) {
-                throw new HttpError(400, "Username already exists!");
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const salt = bcrypt.genSaltSync(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        const expiryDate = new Date();
+        expiryDate.setMinutes(expiryDate.getMinutes() + 10); // Add 10 mins from 'now'
+
+        let newUser;
+        let buyerProfile;
+        let isNewUserCreated = false;
+        let isNewProfileCreated = false;
+
+        // Check for existing email
+        if (existingUserByEmail) {
+            if (existingUserByEmail?.isVerified) {
+                throw new HttpError(400, "Email already registered!");
             }
 
-            // Check for existing contact number
-            const existingBuyerByContact = await this.buyerRepo.findBuyerByContact(contact, { session });
-            if (existingBuyerByContact && existingUserByEmail?.isVerified === true) {
-                throw new HttpError(400, "Contact already exists!");
+            // Update existing unverified user
+            newUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
+                verifyCode: otp,
+                verifyCodeExpiryDate: expiryDate,
+                role,
+            });
+
+            if (!newUser) {
+                throw new HttpError(404, "User with this id not found!");
             }
 
-            const otp = Math.floor(100000 + Math.random() * 900000).toString();
-            const salt = bcrypt.genSaltSync(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-            const expiryDate = new Date();
-            expiryDate.setMinutes(expiryDate.getMinutes() + 10); // Add 10 mins from 'now'
+            // If buyerProfile does not exist for this user, create one
+            buyerProfile = await this.buyerRepo.findBuyerById(newUser._id.toString());
 
-            let newUser;
-            let buyerProfile;
-            let isNewUserCreated = false;
-            let isNewProfileCreated = false;
-
-            // Check for existing email
-            if (existingUserByEmail) {
-                if (existingUserByEmail?.isVerified) {
-                    throw new HttpError(400, "Email already registered!");
-                }
-
-                // Update existing unverified user
-                newUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
-                    verifyCode: otp,
-                    verifyCodeExpiryDate: expiryDate,
-                    role,
-                }, { session });
-
-                if (!newUser) {
-                    throw new HttpError(404, "User with this id not found!");
-                }
-
-                // If buyerProfile does not exist for this user, create one
-                buyerProfile = await this.buyerRepo.findBuyerById(newUser._id.toString(), { session });
-
-                if (!buyerProfile) {
-                    buyerProfile = await this.buyerRepo.createBuyer({
-                        baseUserId: newUser._id.toString(),
-                        fullName,
-                        username,
-                        contact,
-                        password: hashedPassword,
-                        terms,
-                    }, { session });
-
-                    isNewProfileCreated = true;
-                }
-                else {
-                    // Update if exists
-                    buyerProfile = await this.buyerRepo.updateBuyer(buyerProfile._id.toString(), {
-                        fullName,
-                        username,
-                        contact,
-                        password: hashedPassword,
-                        terms,
-                    }, { session });
-                }
-            }
-            else {
-                // Create new user
-                newUser = await this.userRepo.createUser({
-                    email,
-                    role,
-                    isVerified: false,
-                    verifyCode: otp,
-                    verifyCodeExpiryDate: expiryDate,
-                    isPermanentlyBanned: false
-                }, { session });
-
-                if (!newUser) {
-                    throw new HttpError(404, "User with this id not found!");
-                }
-
+            if (!buyerProfile) {
                 buyerProfile = await this.buyerRepo.createBuyer({
                     baseUserId: newUser._id.toString(),
                     fullName,
@@ -146,78 +103,106 @@ export class BuyerAuthService {
                     contact,
                     password: hashedPassword,
                     terms,
-                }, { session });
+                });
 
-                isNewUserCreated = true;
+                isNewProfileCreated = true;
+            }
+            else {
+                // Update if exists
+                buyerProfile = await this.buyerRepo.updateBuyer(buyerProfile._id.toString(), {
+                    fullName,
+                    username,
+                    contact,
+                    password: hashedPassword,
+                    terms,
+                });
+            }
+        }
+        else {
+            // Create new user
+            newUser = await this.userRepo.createUser({
+                email,
+                role,
+                isVerified: false,
+                verifyCode: otp,
+                verifyCodeExpiryDate: expiryDate,
+                isPermanentlyBanned: false
+            });
+
+            if (!newUser) {
+                throw new HttpError(404, "User with this id not found!");
             }
 
-            if (!buyerProfile) {
-                throw new HttpError(404, "Buyer with this id not found!");
+            buyerProfile = await this.buyerRepo.createBuyer({
+                baseUserId: newUser._id.toString(),
+                fullName,
+                username,
+                contact,
+                password: hashedPassword,
+                terms,
+            });
+
+            isNewUserCreated = true;
+        }
+
+        if (!buyerProfile) {
+            await this.userRepo.deleteUser(newUser._id.toString());
+            throw new HttpError(404, "Buyer with this id not found!");
+        }
+
+        // Send verification email
+        const emailResponse = await sendVerificationEmail(fullName, email, otp);
+        if (!emailResponse.success) {
+            // Rollback user creation if email sending fails
+            if (isNewUserCreated) {
+                await this.userRepo.deleteUser(newUser._id.toString());
+                await this.buyerRepo.deleteBuyer(buyerProfile._id.toString());
             }
+            else {
+                // If it was an existing unverified user, clear verification fields
+                newUser = await this.userRepo.updateUser(newUser._id.toString(), {
+                    verifyCode: null,
+                    verifyCodeExpiryDate: null,
+                    role,
+                });
 
-            // Send verification email
-            const emailResponse = await sendVerificationEmail(fullName, email, otp);
-            if (!emailResponse.success) {
-                // Rollback user creation if email sending fails
-                if (isNewUserCreated) {
-                    await this.userRepo.deleteUser(newUser._id.toString(), { session });
-                    await this.buyerRepo.deleteBuyer(buyerProfile._id.toString(), { session });
+                // If profile was updated (not new), we don't revert changes for simplicity
+                if (isNewProfileCreated) {
+                    await this.buyerRepo.deleteBuyer(buyerProfile._id.toString());
                 }
-                else {
-                    // If it was an existing unverified user, clear verification fields
-                    newUser = await this.userRepo.updateUser(newUser._id.toString(), {
-                        verifyCode: null,
-                        verifyCodeExpiryDate: null,
-                        role,
-                    }, { session });
-
-                    // If profile was updated (not new), we don't revert changes for simplicity
-                    if (isNewProfileCreated) {
-                        await this.buyerRepo.deleteBuyer(buyerProfile._id.toString(), { session });
-                    }
-                }
-                throw new HttpError(500, emailResponse.message ?? "Failed to send verification email!");
             }
-
-            await session.commitTransaction();
-
-            // JWT Expiry Calculation in seconds for Signup Token
-            const secondsInAYear = 365 * 24 * 60 * 60;
-            const expiresInSeconds = Number(process.env.JWT_SIGNUP_EXPIRES_IN) * secondsInAYear;
-
-            // Generate Token
-            const token = jwt.sign(
-                { _id: buyerProfile._id.toString(), baseUserId: newUser._id.toString() || buyerProfile.baseUserId.toString(), email: newUser.email, username: buyerProfile.username, contact: buyerProfile.contact, role: newUser.role },
-                process.env.JWT_SECRET!,
-                { expiresIn: expiresInSeconds }
-            );
-
-            const respose: BuyerResponseDtoType = {
-                success: true,
-                message: "User registered successfully. Please verify your email.",
-                status: 201,
-                token,
-                user: {
-                    _id: buyerProfile._id.toString(),
-                    email: newUser.email,
-                    role: newUser.role,
-                    isVerified: newUser.isVerified,
-                    baseUserId: buyerProfile.baseUserId.toString() || newUser._id.toString(),
-                    fullName: buyerProfile.fullName,
-                    username: buyerProfile.username,
-                    contact: buyerProfile.contact,
-                    isPermanentlyBanned: newUser.isPermanentlyBanned,
-                }
-            };
-            return respose;
+            throw new HttpError(500, emailResponse.message ?? "Failed to send verification email!");
         }
-        catch (error: Error | any) {
-            await session.abortTransaction();
-            throw new HttpError(500, error.toString() ?? error.message);
-        }
-        finally {
-            session.endSession();
-        }
+
+        // JWT Expiry Calculation in seconds for Signup Token
+        const secondsInAYear = 365 * 24 * 60 * 60;
+        const expiresInSeconds = Number(process.env.JWT_SIGNUP_EXPIRES_IN) * secondsInAYear;
+
+        // Generate Token
+        const token = jwt.sign(
+            { _id: buyerProfile._id.toString(), baseUserId: newUser._id.toString() || buyerProfile.baseUserId.toString(), email: newUser.email, username: buyerProfile.username, contact: buyerProfile.contact, role: newUser.role },
+            process.env.JWT_SECRET!,
+            { expiresIn: expiresInSeconds }
+        );
+
+        const respose: BuyerResponseDtoType = {
+            success: true,
+            message: "User registered successfully. Please verify your email.",
+            status: 201,
+            token,
+            user: {
+                _id: buyerProfile._id.toString(),
+                email: newUser.email,
+                role: newUser.role,
+                isVerified: newUser.isVerified,
+                baseUserId: buyerProfile.baseUserId.toString() || newUser._id.toString(),
+                fullName: buyerProfile.fullName,
+                username: buyerProfile.username,
+                contact: buyerProfile.contact,
+                isPermanentlyBanned: newUser.isPermanentlyBanned,
+            }
+        };
+        return respose;
     };
 
     checkUsernameUnique = async (checkUsernameUniqueDto: CheckUsernameUniqueDtoType): Promise<BuyerResponseDtoType | null> => {

@@ -7,7 +7,6 @@ import type { AdminRepositoryInterface } from "./../../interfaces/admin.reposito
 import { sendVerificationEmail } from "./../../helpers/send-registration-verification-email.ts";
 import { sendResetPasswordVerificationEmail } from "./../../helpers/send-reset-password-verification-email.ts";
 import { HttpError } from "./../../errors/http-error.ts";
-import { startSession } from "mongoose";
 
 
 export class AdminAuthService {
@@ -39,163 +38,149 @@ export class AdminAuthService {
     };
 
     createAdmin = async (adminData: CreatedAdminDtoType): Promise<AdminResponseDtoType | null> => {
-        const session = await startSession();
+        const { fullName, email, contact, password, role } = adminData;
 
-        try {
-            session.startTransaction();
+        // Check existing user
+        const existingUserByEmail = await this.userRepo.findUserByEmail(email);
 
-            const { fullName, email, contact, password, role } = adminData;
+        // Check for existing contact number
+        const existingAdminByContact = await this.adminRepo.findAdminByContact(contact);
+        if (existingAdminByContact && existingUserByEmail?.isVerified === true) {
+            throw new HttpError(400, "Contact already exists!");
+        }
 
-            // Check existing user
-            const existingUserByEmail = await this.userRepo.findUserByEmail(email, { session });
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const salt = bcrypt.genSaltSync(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        const expiryDate = new Date();
+        expiryDate.setMinutes(expiryDate.getMinutes() + 10); // Add 10 mins from 'now'
 
-            // Check for existing contact number
-            const existingAdminByContact = await this.adminRepo.findAdminByContact(contact, { session });
-            if (existingAdminByContact && existingUserByEmail?.isVerified === true) {
-                throw new HttpError(400, "Contact already exists!");
+        let newUser;
+        let adminProfile;
+        let isNewUserCreated = false;
+        let isNewProfileCreated = false;
+
+        // Check for existing email
+        if (existingUserByEmail) {
+            if (existingUserByEmail?.isVerified) {
+                throw new HttpError(400, "Email already registered!");
             }
 
-            const otp = Math.floor(100000 + Math.random() * 900000).toString();
-            const salt = bcrypt.genSaltSync(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-            const expiryDate = new Date();
-            expiryDate.setMinutes(expiryDate.getMinutes() + 10); // Add 10 mins from 'now'
+            // Update existing unverified user
+            newUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
+                verifyCode: otp,
+                verifyCodeExpiryDate: expiryDate,
+                role,
+            });
 
-            let newUser;
-            let adminProfile;
-            let isNewUserCreated = false;
-            let isNewProfileCreated = false;
-
-            // Check for existing email
-            if (existingUserByEmail) {
-                if (existingUserByEmail?.isVerified) {
-                    throw new HttpError(400, "Email already registered!");
-                }
-
-                // Update existing unverified user
-                newUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
-                    verifyCode: otp,
-                    verifyCodeExpiryDate: expiryDate,
-                    role,
-                }, { session });
-
-                if (!newUser) {
-                    throw new HttpError(404, "User with this id not found!");
-                }
-
-                // If adminProfile does not exist for this user, create one
-                adminProfile = await this.adminRepo.findAdminById(newUser._id.toString(), { session });
-
-                if (!adminProfile) {
-                    adminProfile = await this.adminRepo.createAdmin({
-                        baseUserId: newUser._id.toString(),
-                        fullName,
-                        contact,
-                        password: hashedPassword,
-                    }, { session });
-
-                    isNewProfileCreated = true;
-                }
-                else {
-                    // Update if exists
-                    adminProfile = await this.adminRepo.updateAdmin(adminProfile._id.toString(), {
-                        fullName,
-                        contact,
-                        password: hashedPassword,
-                    }, { session });
-                }
+            if (!newUser) {
+                throw new HttpError(404, "User with this id not found!");
             }
-            else {
-                // Create new user
-                newUser = await this.userRepo.createUser({
-                    email,
-                    role,
-                    isVerified: false,
-                    verifyCode: otp,
-                    verifyCodeExpiryDate: expiryDate,
-                    isPermanentlyBanned: false
-                }, { session });
 
-                if (!newUser) {
-                    throw new HttpError(404, "User with this id not found!");
-                }
+            // If adminProfile does not exist for this user, create one
+            adminProfile = await this.adminRepo.findAdminById(newUser._id.toString());
 
+            if (!adminProfile) {
                 adminProfile = await this.adminRepo.createAdmin({
                     baseUserId: newUser._id.toString(),
                     fullName,
                     contact,
                     password: hashedPassword,
-                }, { session });
+                });
 
-                isNewUserCreated = true;
+                isNewProfileCreated = true;
+            }
+            else {
+                // Update if exists
+                adminProfile = await this.adminRepo.updateAdmin(adminProfile._id.toString(), {
+                    fullName,
+                    contact,
+                    password: hashedPassword,
+                });
+            }
+        }
+        else {
+            // Create new user
+            newUser = await this.userRepo.createUser({
+                email,
+                role,
+                isVerified: false,
+                verifyCode: otp,
+                verifyCodeExpiryDate: expiryDate,
+                isPermanentlyBanned: false
+            });
+
+            if (!newUser) {
+                throw new HttpError(404, "User with this id not found!");
             }
 
-            if (!adminProfile) {
-                throw new HttpError(404, "Admin with this id not found!");
+            adminProfile = await this.adminRepo.createAdmin({
+                baseUserId: newUser._id.toString(),
+                fullName,
+                contact,
+                password: hashedPassword,
+            });
+
+            isNewUserCreated = true;
+        }
+
+        if (!adminProfile) {
+            await this.userRepo.deleteUser(newUser._id.toString());
+            throw new HttpError(404, "Admin with this id not found!");
+        }
+
+        // Send verification email
+        const emailResponse = await sendVerificationEmail(fullName, email, otp);
+        if (!emailResponse.success) {
+            // Rollback user creation if email sending fails
+            if (isNewUserCreated) {
+                await this.userRepo.deleteUser(newUser._id.toString());
+                await this.adminRepo.deleteAdmin(adminProfile._id.toString());
             }
+            else {
+                // If it was an existing unverified user, clear verification fields
+                newUser = await this.userRepo.updateUser(newUser._id.toString(), {
+                    verifyCode: null,
+                    verifyCodeExpiryDate: null,
+                    role,
+                });
 
-            // Send verification email
-            const emailResponse = await sendVerificationEmail(fullName, email, otp);
-            if (!emailResponse.success) {
-                // Rollback user creation if email sending fails
-                if (isNewUserCreated) {
-                    await this.userRepo.deleteUser(newUser._id.toString(), { session });
-                    await this.adminRepo.deleteAdmin(adminProfile._id.toString(), { session });
+                // If profile was updated (not new), we don't revert changes for simplicity
+                if (isNewProfileCreated) {
+                    await this.adminRepo.deleteAdmin(adminProfile._id.toString());
                 }
-                else {
-                    // If it was an existing unverified user, clear verification fields
-                    newUser = await this.userRepo.updateUser(newUser._id.toString(), {
-                        verifyCode: null,
-                        verifyCodeExpiryDate: null,
-                        role,
-                    }, { session });
-
-                    // If profile was updated (not new), we don't revert changes for simplicity
-                    if (isNewProfileCreated) {
-                        await this.adminRepo.deleteAdmin(adminProfile._id.toString(), { session });
-                    }
-                }
-                throw new HttpError(500, emailResponse.message ?? "Failed to send verification email!");
             }
-
-            await session.commitTransaction();
-
-            // JWT Expiry Calculation in seconds for Signup Token
-            const secondsInAYear = 365 * 24 * 60 * 60;
-            const expiresInSeconds = Number(process.env.JWT_SIGNUP_EXPIRES_IN) * secondsInAYear;
-
-            // Generate Token
-            const token = jwt.sign(
-                { _id: newUser?._id, email: newUser?.email, contact: adminProfile?.contact, role: newUser?.role },
-                process.env.JWT_SECRET!,
-                { expiresIn: expiresInSeconds }
-            );
-
-            const respose: AdminResponseDtoType = {
-                success: true,
-                message: "User registered successfully. Please verify your email.",
-                status: 201,
-                token,
-                user: {
-                    _id: adminProfile._id.toString(),
-                    baseUserId: adminProfile.baseUserId.toString(),
-                    email: newUser.email,
-                    fullName: adminProfile.fullName,
-                    contact: adminProfile.contact,
-                    role: newUser.role,
-                    isVerified: newUser.isVerified,
-                    isPermanentlyBanned: newUser.isPermanentlyBanned,
-                }
-            };
-            return respose;
+            throw new HttpError(500, emailResponse.message ?? "Failed to send verification email!");
         }
-        catch (error: Error | any) {
-            await session.abortTransaction();
-            throw new HttpError(500, error.toString() ?? error.message);
-        }
-        finally {
-            session.endSession();
-        }
+
+        // JWT Expiry Calculation in seconds for Signup Token
+        const secondsInAYear = 365 * 24 * 60 * 60;
+        const expiresInSeconds = Number(process.env.JWT_SIGNUP_EXPIRES_IN) * secondsInAYear;
+
+        // Generate Token
+        const token = jwt.sign(
+            { _id: newUser?._id, email: newUser?.email, contact: adminProfile?.contact, role: newUser?.role },
+            process.env.JWT_SECRET!,
+            { expiresIn: expiresInSeconds }
+        );
+
+        const respose: AdminResponseDtoType = {
+            success: true,
+            message: "User registered successfully. Please verify your email.",
+            status: 201,
+            token,
+            user: {
+                _id: adminProfile._id.toString(),
+                baseUserId: adminProfile.baseUserId.toString(),
+                email: newUser.email,
+                fullName: adminProfile.fullName,
+                contact: adminProfile.contact,
+                role: newUser.role,
+                isVerified: newUser.isVerified,
+                isPermanentlyBanned: newUser.isPermanentlyBanned,
+            }
+        };
+        return respose;
     };
 
     verifyOtpForRegistration = async (verifyOtpForRegistrationDto: VerifyOtpForRegistrationDtoType): Promise<AdminResponseDtoType> => {
@@ -401,77 +386,62 @@ export class AdminAuthService {
     };
 
     resetPassword = async (resetPasswordDto: ResetPasswordDtoType): Promise<AdminResponseDtoType> => {
-        const session = await startSession();
+        const { email, newPassword } = resetPasswordDto;
 
-        try {
-            session.startTransaction();
-
-            const { email, newPassword } = resetPasswordDto;
-
-            if (!email || email.trim() === "") {
-                throw new HttpError(400, "Email is required!");
-            }
-
-            if (!newPassword || newPassword.trim() === "") {
-                throw new HttpError(400, "New password is required!");
-            }
-
-            const decodedEmail = decodeURIComponent(email);
-            const existingUserByEmail = await this.userRepo.findUserByEmail(decodedEmail, { session });
-
-            if (!existingUserByEmail) {
-                throw new HttpError(404, "User with this email does not exist!");
-            }
-
-            if (!existingUserByEmail.verifyEmailResetPassword || !existingUserByEmail.verifyEmailResetPasswordExpiryDate) {
-                throw new HttpError(400, "No OTP request found! Please request for a new OTP.");
-            }
-
-            if (new Date() > existingUserByEmail.verifyEmailResetPasswordExpiryDate) {
-                throw new HttpError(400, "OTP has expired! Please request for a new OTP.");
-            }
-
-            const existingAdminByBaseUserId = await this.adminRepo.findAdminByBaseUserId(existingUserByEmail._id.toString(), { session });
-            if (!existingAdminByBaseUserId) {
-                throw new HttpError(404, "Admin with this base user id not found!");
-            }
-
-            const updatedUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
-                verifyEmailResetPassword: null,
-                verifyEmailResetPasswordExpiryDate: null,
-            }, { session });
-
-            if (!updatedUser) {
-                throw new HttpError(404, "User is not updated and not found!");
-            }
-
-            const salt = bcrypt.genSaltSync(10);
-            const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-            const updatedAdmin = await this.adminRepo.updateAdmin(existingAdminByBaseUserId._id.toString(), {
-                password: hashedPassword
-            }, { session });
-
-            if (!updatedAdmin) {
-                throw new HttpError(404, "Admin is not updated and not found!");
-            }
-
-            await session.commitTransaction();
-
-            const response: AdminResponseDtoType = {
-                success: true,
-                message: "Account verified successfully. You can now login.",
-                status: 200,
-            };
-            return response;
+        if (!email || email.trim() === "") {
+            throw new HttpError(400, "Email is required!");
         }
-        catch (error: Error | any) {
-            await session.abortTransaction();
-            throw new HttpError(500, error.toString() ?? error.message);
+
+        if (!newPassword || newPassword.trim() === "") {
+            throw new HttpError(400, "New password is required!");
         }
-        finally {
-            session.endSession();
+
+        const decodedEmail = decodeURIComponent(email);
+        const existingUserByEmail = await this.userRepo.findUserByEmail(decodedEmail);
+
+        if (!existingUserByEmail) {
+            throw new HttpError(404, "User with this email does not exist!");
         }
+
+        if (!existingUserByEmail.verifyEmailResetPassword || !existingUserByEmail.verifyEmailResetPasswordExpiryDate) {
+            throw new HttpError(400, "No OTP request found! Please request for a new OTP.");
+        }
+
+        if (new Date() > existingUserByEmail.verifyEmailResetPasswordExpiryDate) {
+            throw new HttpError(400, "OTP has expired! Please request for a new OTP.");
+        }
+
+        const existingAdminByBaseUserId = await this.adminRepo.findAdminByBaseUserId(existingUserByEmail._id.toString());
+        if (!existingAdminByBaseUserId) {
+            throw new HttpError(404, "Admin with this base user id not found!");
+        }
+
+        const updatedUser = await this.userRepo.updateUser(existingUserByEmail._id.toString(), {
+            verifyEmailResetPassword: null,
+            verifyEmailResetPasswordExpiryDate: null,
+        });
+
+        if (!updatedUser) {
+            throw new HttpError(404, "User is not updated and not found!");
+        }
+
+        const salt = bcrypt.genSaltSync(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        const updatedAdmin = await this.adminRepo.updateAdmin(existingAdminByBaseUserId._id.toString(), {
+            password: hashedPassword
+        });
+
+        if (!updatedAdmin) {
+            throw new HttpError(404, "Admin is not updated and not found!");
+        }
+
+        const response: AdminResponseDtoType = {
+            success: true,
+            message: "Account verified successfully. You can now login.",
+            status: 200,
+        };
+        return response;
     };
 
     handleSendEmailForRegistration = async (sendEmailForRegistrationDto: SendEmailForRegistrationDtoType): Promise<AdminResponseDtoType> => {

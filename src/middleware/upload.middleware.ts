@@ -1,19 +1,20 @@
 // src/middleware/upload.middleware.ts
 import multer from "multer";
+import type { Request } from "express";
+import { HttpError } from "../errors/http-error.ts";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
 import { MEDIA_STORAGE_PROVIDER } from "../config/cloudinary.config.ts";
-import type { Request } from "express";
-import { HttpError } from "../errors/http-error.ts";
+// import { fileURLToPath } from "url";
+
 
 // Configure Multer storage based on provider
 let storage: multer.StorageEngine;
 if (MEDIA_STORAGE_PROVIDER === "local") {
     // Disk storage for local files
     storage = multer.diskStorage({
-        destination: function (req: Request, file, cb) {
+        destination: async (req: Request, file, cb) => {
             let baseDir = "other";
             if (file.mimetype.startsWith("image/")) {
                 baseDir = "images";
@@ -21,18 +22,34 @@ if (MEDIA_STORAGE_PROVIDER === "local") {
             else if (file.mimetype.startsWith("video/")) {
                 baseDir = "videos";
             }
-            let subFolder = req.body.folder || "";
-            const __dirname = path.dirname(fileURLToPath(import.meta.url));
-            const uploadDir = path.join(__dirname, "./../../public/uploads", baseDir, subFolder);
+
+            // let subFolder = await req.body.folder || "";
+            let subFolder = "";
+            if (file.fieldname === "profile-picture-buyer") {
+                subFolder = "profile-pictures/buyers";
+            }
+            else if (file.fieldname === "profile-picture-seller") {
+                subFolder = "profile-pictures/sellers";
+            }
+            else if (file.fieldname === "productImage") {
+                subFolder = "prod-img-";
+            }
+
+            // const __dirname = path.dirname(fileURLToPath(import.meta.url));
+            // const uploadDir = path.join(__dirname, "./../../public/uploads", baseDir, subFolder);
+            const uploadDir = path.join(process.cwd(), "public/uploads", baseDir, subFolder);
             if (!fs.existsSync(uploadDir)) {
                 fs.mkdirSync(uploadDir, { recursive: true });
             }
             cb(null, uploadDir);
         },
-        filename: function (req: Request, file, cb) {
+        filename: (req: Request, file, cb) => {
             const ext = path.extname(file.originalname);
             let prefix = "";
-            if (file.fieldname === "profilePicture") {
+            if ((file.fieldname === "profilePicture") ||
+                (file.fieldname === "profile-picture-buyer") ||
+                (file.fieldname === "profile-picture-seller")
+            ) {
                 prefix = "pro-pic-";
             }
             else if (file.fieldname === "productImage") {
@@ -49,6 +66,8 @@ else if (MEDIA_STORAGE_PROVIDER === "cloudinary") {
 else {
     throw new HttpError(400, "Invalid MEDIA_STORAGE_PROVIDER. Must be 'local' or 'cloudinary'.");
 }
+
+// const storage = multer.memoryStorage();
 
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     // Accept images or videos

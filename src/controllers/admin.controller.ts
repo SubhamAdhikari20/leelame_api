@@ -33,10 +33,13 @@ export class AdminController {
                 });
             }
 
+            console.log("Admin token id:", tokenUserId.toString());
+            console.log("Admin id:", adminId.toString());
+
             if (adminId.toString() !== tokenUserId.toString()) {
                 return res.status(400).json({
                     success: false,
-                    message: "Params id and toke id mismatch!"
+                    message: "Params id and token id mismatch!"
                 });
             }
 
@@ -94,7 +97,7 @@ export class AdminController {
             if (adminId.toString() !== tokenUserId.toString()) {
                 return res.status(400).json({
                     success: false,
-                    message: "Params id and toke id mismatch!"
+                    message: "Params id and token id mismatch!"
                 });
             }
 
@@ -161,7 +164,7 @@ export class AdminController {
             if (adminId.toString() !== tokenUserId.toString()) {
                 return res.status(400).json({
                     success: false,
-                    message: "Params id and toke id mismatch!"
+                    message: "Params id and token id mismatch!"
                 });
             }
 
@@ -226,7 +229,7 @@ export class AdminController {
             if (adminId.toString() !== tokenUserId.toString()) {
                 return res.status(400).json({
                     success: false,
-                    message: "Params id and toke id mismatch!"
+                    message: "Params id and token id mismatch!"
                 });
             }
 
@@ -275,7 +278,7 @@ export class AdminController {
             if (adminId.toString() !== tokenUserId.toString()) {
                 return res.status(400).json({
                     success: false,
-                    message: "Params id and toke id mismatch!"
+                    message: "Params id and token id mismatch!"
                 });
             }
 
@@ -349,6 +352,14 @@ export class AdminController {
     // Seller CRUD by admin
     createSellerAccount = asyncHandler(async (req: Request, res: Response) => {
         try {
+            const tokenUserId = await req.user?._id;
+            if (!tokenUserId || tokenUserId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token Error! Token admin with id not found."
+                });
+            }
+
             const body = await req.body;
             const validatedData = CreatedSellerByAdminDto.safeParse(body);
 
@@ -359,7 +370,15 @@ export class AdminController {
                 });
             }
 
-            const result = await this.adminService.createSellerAccount(validatedData.data);
+            const profilePicture = await req.file;
+            const subFolder = await req.body.folder;
+            let result;
+            if (profilePicture) {
+                result = await this.adminService.createSellerAccount(validatedData.data, profilePicture, subFolder);
+            }
+            else {
+                result = await this.adminService.createSellerAccount(validatedData.data);
+            }
 
             const validatedResponseSellerData = SellerResponseDto.safeParse(result?.user);
             if (!validatedResponseSellerData.success) {
@@ -396,6 +415,7 @@ export class AdminController {
     getAllSellers = asyncHandler(async (req: Request, res: Response) => {
         try {
             const tokenUserId = await req.user?._id;
+            
             if (!tokenUserId || tokenUserId.toString() === "") {
                 return res.status(400).json({
                     success: false,
@@ -416,6 +436,7 @@ export class AdminController {
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
+                users: validatedSellersData.data,
             });
         }
         catch (error: Error | any) {

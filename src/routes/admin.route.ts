@@ -8,6 +8,7 @@ import { AdminService } from "./../services/admin.service.ts";
 import { AdminController } from "./../controllers/admin.controller.ts";
 import { AdminAuthMiddleware } from "./../middleware/auth.middleware.ts";
 import { SellerRepository } from "./../repositories/seller.repository.ts";
+import { upload } from "./../middleware/upload.middleware.ts";
 
 
 const userRepo = new UserRepository();
@@ -39,15 +40,17 @@ router.put("/reset-password", adminAuthController.resetPassword);
 router.get("/logout", adminAuthMiddleware.protect, adminController.logoutAdmin);
 
 // Admin Other CRUDs
-router.get("/:id", adminAuthMiddleware.protect, adminController.getCurrentAdmin);
 router.put("/update-profile-details/:id", adminAuthMiddleware.protect, adminController.updateAdminProfileDetails);
-router.put("/upload-profile-picture/:id", adminAuthMiddleware.protect, adminController.uploadProfilePicture);
+router.put("/upload-profile-picture/:id", adminAuthMiddleware.protect, upload.single("profilePicture"), adminController.uploadProfilePicture);
 router.delete("/delete-account/:id", adminAuthMiddleware.protect, adminController.deleteAdminAccount);
 
 // Seller CRUDs by admin
-router.post("/create-seller-account", adminAuthMiddleware.protect, adminController.createSellerAccount);
+router.post("/create-seller-account", adminAuthMiddleware.protect, upload.single("profile-picture-seller"), adminController.createSellerAccount);
 // router.put("/update-seller-details/:sellerId", adminAuthMiddleware.protect, adminController.updateAdminProfileDetails);
 router.get("/get-all-sellers", adminAuthMiddleware.protect, adminController.getAllSellers);
 router.delete("/delete-seller-account/:sellerId", adminAuthMiddleware.protect, adminController.deleteSellerAccount);
+
+// Get Current Admin Dynamic Route
+router.get("/:id", adminAuthMiddleware.protect, adminController.getCurrentAdmin);
 
 export default router;
