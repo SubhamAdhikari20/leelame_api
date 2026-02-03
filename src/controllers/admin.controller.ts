@@ -1,6 +1,6 @@
 // src/controllers/admin.controller.ts
 import type { Request, Response } from "express";
-import { AdminResponseDto, CreatedSellerByAdminDto, UpdateAdminProfileDetailsDto, UploadImageAdminResponseDto } from "./../dtos/admin.dto.ts";
+import { AdminResponseDto, CreatedSellerByAdminDto, UpdateAdminProfileDetailsDto, UpdateSellerByAdminDto, UploadImageAdminResponseDto } from "./../dtos/admin.dto.ts";
 import { AdminService } from "./../services/admin.service.ts";
 import { z } from "zod";
 import { HttpError } from "./../errors/http-error.ts";
@@ -32,9 +32,6 @@ export class AdminController {
                     message: "Token Error! Token admin id not found."
                 });
             }
-
-            console.log("Admin token id:", tokenUserId.toString());
-            console.log("Admin id:", adminId.toString());
 
             if (adminId.toString() !== tokenUserId.toString()) {
                 return res.status(400).json({
@@ -169,6 +166,7 @@ export class AdminController {
             }
 
             const profilePicture = await req.file;
+            const subFolder = await req.body.folder;
             if (!profilePicture) {
                 return res.status(400).json({
                     success: false,
@@ -176,7 +174,7 @@ export class AdminController {
                 });
             }
 
-            const result = await this.adminService.uploadProfilePicture(adminId.toString(), profilePicture);
+            const result = await this.adminService.uploadProfilePicture(adminId.toString(), profilePicture, subFolder);
             const validatedResponseAdminData = UploadImageAdminResponseDto.safeParse(result?.data);
             if (!validatedResponseAdminData.success) {
                 return res.status(400).json({
@@ -415,7 +413,7 @@ export class AdminController {
     getAllSellers = asyncHandler(async (req: Request, res: Response) => {
         try {
             const tokenUserId = await req.user?._id;
-            
+
             if (!tokenUserId || tokenUserId.toString() === "") {
                 return res.status(400).json({
                     success: false,
@@ -456,6 +454,178 @@ export class AdminController {
         }
     });
 
+    getSellerById = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const sellerId = await req.params.sellerId;
+            if (!sellerId || sellerId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Params Error! Seller id is not sent through params."
+                });
+            }
+
+            const tokenUserId = await req.user?._id;
+            if (!tokenUserId || tokenUserId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token Error! Token admin id not found."
+                });
+            }
+
+            const result = await this.adminService.getSellerById(sellerId.toString());
+
+            const validatedSellerData = SellerResponseDto.safeParse(result?.user);
+            if (!validatedSellerData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedSellerData.error)
+                });
+            }
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+                user: validatedSellerData.data,
+            });
+        }
+        catch (error: Error | any) {
+            console.error("Error in fetching seller by id controller:", error);
+
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
+    updateSellerProfileDetails = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const sellerId = await req.params.sellerId;
+            if (!sellerId || sellerId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Params Error! Seller id is not sent through params."
+                });
+            }
+
+            const tokenUserId = await req.user?._id;
+            if (!tokenUserId || tokenUserId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token Error! Token admin id not found."
+                });
+            }
+
+            const body = req.body;
+
+            const validatedData = UpdateSellerByAdminDto.safeParse(body);
+            if (!validatedData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedData.error)
+                });
+            }
+
+            const result = await this.adminService.updateSellerProfileDetails(sellerId.toString(), validatedData.data);
+
+            const validatedResponseSellerData = SellerResponseDto.safeParse(result?.user);
+            if (!validatedResponseSellerData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedResponseSellerData.error)
+                });
+            }
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+                user: validatedResponseSellerData.data,
+            });
+        }
+        catch (error: Error | any) {
+            console.error("Error updating seller details in controller: ", error);
+
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
+    uploadSellerProfilePicture = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const sellerId = await req.params.sellerId;
+            if (!sellerId || sellerId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Params Error! Seller id is not sent through params."
+                });
+            }
+
+            const tokenUserId = await req.user?._id;
+            if (!tokenUserId || tokenUserId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token Error! Token admin id not found."
+                });
+            }
+
+            const profilePicture = req.file;
+            const subFolder = await req.body.folder;
+            if (!profilePicture) {
+                return res.status(400).json({
+                    success: false,
+                    message: "No file provided!"
+                });
+            }
+
+            const result = await this.adminService.uploadSellerProfilePicture(sellerId.toString(), profilePicture, subFolder);
+
+            const validatedResponseData = UploadImageAdminResponseDto.safeParse(result?.data);
+            if (!validatedResponseData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedResponseData.error)
+                });
+            }
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+                data: validatedResponseData.data,
+            });
+        }
+        catch (error: Error | any) {
+            console.error("Error uploading seller profile picture in controller: ", error);
+
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
     deleteSellerAccount = asyncHandler(async (req: Request, res: Response) => {
         try {
             const sellerId = await req.params.sellerId;
@@ -463,6 +633,14 @@ export class AdminController {
                 return res.status(400).json({
                     success: false,
                     message: "Params Error! Seller id is not sent through params."
+                });
+            }
+
+            const tokenUserId = await req.user?._id;
+            if (!tokenUserId || tokenUserId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token Error! Token admin id not found."
                 });
             }
 

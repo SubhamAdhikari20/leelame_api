@@ -41,12 +41,14 @@ router.get("/logout", adminAuthMiddleware.protect, adminController.logoutAdmin);
 
 // Admin Other CRUDs
 router.put("/update-profile-details/:id", adminAuthMiddleware.protect, adminController.updateAdminProfileDetails);
-router.put("/upload-profile-picture/:id", adminAuthMiddleware.protect, upload.single("profilePicture"), adminController.uploadProfilePicture);
+router.put("/upload-profile-picture/:id", adminAuthMiddleware.protect, upload.single("profile-picture-admin"), adminController.uploadProfilePicture);
 router.delete("/delete-account/:id", adminAuthMiddleware.protect, adminController.deleteAdminAccount);
 
 // Seller CRUDs by admin
 router.post("/create-seller-account", adminAuthMiddleware.protect, upload.single("profile-picture-seller"), adminController.createSellerAccount);
-// router.put("/update-seller-details/:sellerId", adminAuthMiddleware.protect, adminController.updateAdminProfileDetails);
+router.get("/get-seller-by-id/:sellerId", adminAuthMiddleware.protect, adminController.getSellerById);
+router.put("/update-seller-details/:sellerId", adminAuthMiddleware.protect, adminController.updateSellerProfileDetails);
+router.put("/upload-seller-profile-picture/:sellerId", adminAuthMiddleware.protect, upload.single("profile-picture-seller"), adminController.uploadSellerProfilePicture);
 router.get("/get-all-sellers", adminAuthMiddleware.protect, adminController.getAllSellers);
 router.delete("/delete-seller-account/:sellerId", adminAuthMiddleware.protect, adminController.deleteSellerAccount);
 

@@ -98,9 +98,16 @@ export const CreatedSellerByAdminDto = z.object({
     email: emailValidation,
     password: passwordValidation,
     role: roleValidation,
-    // profilePictureUrl: z.string().nullish(),
 });
 export type CreatedSellerByAdminDtoType = z.infer<typeof CreatedSellerByAdminDto>;
+
+// Update Seller DTO
+export const UpdateSellerByAdminDto = z.object({
+    fullName: fullNameValidation,
+    contact: contactValidation,
+    email: emailValidation,
+});
+export type UpdateSellerByAdminDtoType = z.infer<typeof UpdateSellerByAdminDto>;
 
 
 // Admin Response
@@ -127,7 +134,7 @@ export type AdminResponseDtoType = {
 };
 
 export const UploadImageAdminResponseDto = z.object({
-    imageUrl: z.url()
+    imageUrl: z.string()
 });
 
 export type UploadImageAdminResponseDtoType = {

@@ -31,6 +31,9 @@ if (MEDIA_STORAGE_PROVIDER === "local") {
             else if (file.fieldname === "profile-picture-seller") {
                 subFolder = "profile-pictures/sellers";
             }
+            else if (file.fieldname === "profile-picture-admin") {
+                subFolder = "profile-pictures/admins";
+            }
             else if (file.fieldname === "productImage") {
                 subFolder = "prod-img-";
             }

@@ -1,7 +1,7 @@
 // src/services/admin.service.ts
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import type { AdminResponseDtoType, UpdateAdminProfileDetailsDtoType, UploadImageAdminResponseDtoType, CreatedSellerByAdminDtoType } from "./../dtos/admin.dto.ts";
+import type { AdminResponseDtoType, UpdateAdminProfileDetailsDtoType, UploadImageAdminResponseDtoType, CreatedSellerByAdminDtoType, UpdateSellerByAdminDtoType } from "./../dtos/admin.dto.ts";
 import type { AdminRepositoryInterface } from "./../interfaces/admin.repository.interface.ts";
 import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
 import type { AllSellersResponseDtoType, SellerResponseDtoType } from "./../dtos/seller.dto.ts";
@@ -124,7 +124,7 @@ export class AdminService {
         return response;
     };
 
-    uploadProfilePicture = async (userId: string, profilePicture: Express.Multer.File): Promise<UploadImageAdminResponseDtoType> => {
+    uploadProfilePicture = async (userId: string, profilePicture: Express.Multer.File, imageSubFolder?: string): Promise<UploadImageAdminResponseDtoType> => {
         if (!profilePicture) {
             throw new HttpError(400, "No file provided! Upload a file.");
         }
@@ -138,7 +138,7 @@ export class AdminService {
             throw new HttpError(404, "Admin with the admin id not found!");
         }
 
-        const imageUrl = await processSingleUpload(profilePicture, "profile-pictures/admins");
+        const imageUrl = await processSingleUpload(profilePicture, imageSubFolder || "profile-pictures/admins");
 
         const updatedAdmin = await this.adminRepo.updateAdmin(existingAdminById._id.toString(), {
             profilePictureUrl: imageUrl
@@ -407,13 +407,149 @@ export class AdminService {
         return respose;
     };
 
+    getSellerById = async (sellerId: string): Promise<SellerResponseDtoType> => {
+        if (!sellerId || sellerId.trim() === "") {
+            throw new HttpError(400, "Seller id is required!");
+        }
+
+        const decodedSellerId = decodeURIComponent(sellerId);
+        const existingSeller = await this.sellerRepo.findSellerById(decodedSellerId);
+
+        if (!existingSeller) {
+            throw new HttpError(404, "Seller with this id not found!");
+        }
+
+        const existingBaseUser = await this.userRepo.findUserById(existingSeller.baseUserId.toString());
+        if (!existingBaseUser) {
+            throw new HttpError(404, "Base user with this user id not found!");
+        }
+
+        const response: SellerResponseDtoType = {
+            success: true,
+            message: "Seller data fetched successfully.",
+            status: 200,
+            user: {
+                _id: existingSeller._id.toString(),
+                email: existingBaseUser.email,
+                role: existingBaseUser.role,
+                isVerified: existingBaseUser.isVerified,
+                baseUserId: existingSeller.baseUserId.toString() || existingBaseUser._id.toString(),
+                fullName: existingSeller.fullName,
+                contact: existingSeller.contact,
+                profilePictureUrl: existingSeller.profilePictureUrl,
+                isPermanentlyBanned: existingBaseUser.isPermanentlyBanned,
+                bio: existingSeller.bio,
+            }
+        };
+        return response;
+    };
+
+    updateSellerProfileDetails = async (sellerId: string, updateSellerData: UpdateSellerByAdminDtoType): Promise<SellerResponseDtoType> => {
+        const { fullName, contact, email } = updateSellerData;
+
+        const existingSeller = await this.sellerRepo.findSellerById(sellerId);
+        if (!existingSeller) {
+            throw new HttpError(404, "Seller with the seller id not found!");
+        }
+
+        const existingBaseUser = await this.userRepo.findUserById(existingSeller.baseUserId.toString());
+        if (!existingBaseUser) {
+            throw new HttpError(404, "Base user with base user id not found!");
+        }
+
+        // Changing email
+        if (existingBaseUser.email !== email) {
+            const existingUserByEmail = await this.userRepo.findUserByEmail(email);
+            if (existingUserByEmail && (existingUserByEmail._id.toString() !== existingBaseUser._id.toString()) && existingBaseUser.isVerified) {
+                throw new HttpError(400, "Email already registered!");
+            }
+        }
+
+        // Changing contact
+        if (existingSeller.contact !== contact) {
+            const existingSellerByContact = await this.sellerRepo.findSellerByContact(contact);
+            if (existingSellerByContact && (existingSellerByContact._id.toString() !== sellerId) && existingBaseUser.isVerified) {
+                throw new HttpError(400, "Contact already exists!");
+            }
+        }
+
+        const updatedSeller = await this.sellerRepo.updateSeller(existingSeller._id.toString(), {
+            fullName,
+            contact
+        });
+
+        if (!updatedSeller) {
+            throw new HttpError(404, "Seller is not updated and not found!");
+        }
+
+        const updatedBaseUser = await this.userRepo.updateUser(existingSeller.baseUserId.toString(), { email });
+        if (!updatedBaseUser) {
+            throw new HttpError(404, "Base user is not updated and not found!");
+        }
+
+        const response: SellerResponseDtoType = {
+            success: true,
+            message: "Seller profile details updated successfully.",
+            status: 200,
+            user: {
+                _id: updatedSeller._id.toString(),
+                baseUserId: updatedSeller.baseUserId.toString() ?? updatedBaseUser._id.toString(),
+                email: updatedBaseUser.email,
+                fullName: updatedSeller.fullName,
+                contact: updatedSeller.contact,
+                role: updatedBaseUser.role,
+                isVerified: updatedBaseUser.isVerified,
+                profilePictureUrl: updatedSeller.profilePictureUrl,
+                isPermanentlyBanned: updatedBaseUser.isPermanentlyBanned,
+                bio: updatedSeller.bio,
+            }
+        };
+        return response;
+    };
+
+    uploadSellerProfilePicture = async (sellerId: string, profilePicture: Express.Multer.File, imageSubFolder?: string): Promise<UploadImageAdminResponseDtoType> => {
+        if (!profilePicture) {
+            throw new HttpError(400, "No file provided! Upload a file.");
+        }
+
+        if (!profilePicture.mimetype.startsWith("image/")) {
+            throw new HttpError(400, "Only image files are allowed!");
+        }
+
+        const existingSeller = await this.sellerRepo.findSellerById(sellerId);
+        if (!existingSeller) {
+            throw new HttpError(404, "Seller with the seller id not found!");
+        }
+
+        const imageUrl = await processSingleUpload(profilePicture, imageSubFolder || "profile-pictures/sellers");
+
+        const updatedSeller = await this.sellerRepo.updateSeller(existingSeller._id.toString(), {
+            profilePictureUrl: imageUrl
+        });
+
+        if (!updatedSeller || !updatedSeller.profilePictureUrl) {
+            await processDeleteUpload(imageUrl!);
+            throw new HttpError(404, "Seller is not found along with profile picture!");
+        }
+
+        const response: UploadImageAdminResponseDtoType = {
+            success: true,
+            message: "Seller profile picture uploaded successfully.",
+            status: 200,
+            data: {
+                imageUrl: updatedSeller.profilePictureUrl
+            }
+        };
+        return response;
+    };
+
     deleteSellerAccount = async (sellerId: string): Promise<SellerResponseDtoType | null> => {
         if (!sellerId || sellerId.trim() === "") {
             throw new HttpError(400, "Admin id is required!");
         }
 
         const decodedSellerId = decodeURIComponent(sellerId);
-        const deletedSeller = await this.adminRepo.deleteAdmin(decodedSellerId);
+        const deletedSeller = await this.sellerRepo.deleteSeller(decodedSellerId);
         if (!deletedSeller) {
             throw new HttpError(400, "Seller account could not deleted!");
         }
