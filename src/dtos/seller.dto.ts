@@ -112,7 +112,7 @@ export type SellerResponseDtoType = {
 };
 
 export const UploadImageSellerResponseDto = z.object({
-    imageUrl: z.url()
+    imageUrl: z.string()
 });
 
 export type UploadImageSellerResponseDtoType = {

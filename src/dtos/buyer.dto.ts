@@ -134,13 +134,6 @@ export const BuyerResponseDto = z.object({
     bio: z.string().nullish(),
     createdAt: z.date().nullish(),
     updatedAt: z.date().nullish(),
-    // baseUser: z.object({
-    //     _id: z.string(),
-    //     email: z.email(),
-    //     role: z.string(),
-    //     isVerified: z.boolean(),
-    //     isPermanentlyBanned: z.boolean(),
-    // }).nullish(),
 });
 
 export type BuyerResponseDtoType = {

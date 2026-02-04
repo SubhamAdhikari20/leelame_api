@@ -165,6 +165,7 @@ export class SellerController {
             }
 
             const profilePicture = await req.file;
+            const subFolder = await req.body.folder;
             if (!profilePicture) {
                 return res.status(400).json({
                     success: false,
@@ -172,7 +173,7 @@ export class SellerController {
                 });
             }
 
-            const result = await this.sellerService.uploadProfilePicture(sellerId.toString(), profilePicture);
+            const result = await this.sellerService.uploadProfilePicture(sellerId.toString(), profilePicture, subFolder);
             const validatedResponseSellerData = UploadImageSellerResponseDto.safeParse(result?.data);
             if (!validatedResponseSellerData.success) {
                 return res.status(400).json({

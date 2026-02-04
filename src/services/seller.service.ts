@@ -118,7 +118,7 @@ export class SellerService {
         return response;
     };
 
-    uploadProfilePicture = async (userId: string, profilePicture: Express.Multer.File): Promise<UploadImageSellerResponseDtoType> => {
+    uploadProfilePicture = async (userId: string, profilePicture: Express.Multer.File, imageSubFolder?: string): Promise<UploadImageSellerResponseDtoType> => {
         if (!profilePicture) {
             throw new HttpError(400, "No file provided! Upload a file.");
         }
@@ -132,7 +132,7 @@ export class SellerService {
             throw new HttpError(404, "Seller with the seller id not found!");
         }
 
-        const imageUrl = await processSingleUpload(profilePicture, "profile-pictures/sellers");
+        const imageUrl = await processSingleUpload(profilePicture, imageSubFolder || "profile-pictures/sellers");
 
         const updatedSeller = await this.sellerRepo.updateSeller(existingSellerById._id.toString(), {
             profilePictureUrl: imageUrl

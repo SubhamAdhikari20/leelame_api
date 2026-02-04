@@ -7,6 +7,7 @@ import { SellerAuthController } from "./../controllers/auth/seller-auth.controll
 import { SellerService } from "./../services/seller.service.ts";
 import { SellerController } from "./../controllers/seller.controller.ts";
 import { SellerAuthMiddleware } from "./../middleware/auth.middleware.ts";
+import { upload } from "./../middleware/upload.middleware.ts";
 
 
 const userRepo = new UserRepository();
@@ -34,11 +35,11 @@ router.put("/reset-password", sellerAuthController.resetPassword);
 router.get("/logout", sellerAuthMiddleware.protect, sellerAuthController.logoutSeller);
 
 // Seller Other CRUDs
-router.get("/:id", sellerAuthMiddleware.protect, sellerController.getCurrentSeller);
 router.put("/update-profile-details/:id", sellerAuthMiddleware.protect, sellerController.updateSellerProfileDetails);
-router.put("/upload-profile-picture/:id", sellerAuthMiddleware.protect, sellerController.uploadProfilePicture);
+router.put("/upload-profile-picture/:id", sellerAuthMiddleware.protect, upload.single("profile-picture-seller"), sellerController.uploadProfilePicture);
 router.delete("/delete-account/:id", sellerAuthMiddleware.protect, sellerController.deleteSellerAccount);
 
-// router.get("/:email", sellerAuthMiddleware.protect, sellerController.getSellerByEmail);
+// Get Current Admin Dynamic Route
+router.get("/:id", sellerAuthMiddleware.protect, sellerController.getCurrentSeller);
 
 export default router;
