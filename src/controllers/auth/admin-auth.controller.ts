@@ -44,7 +44,7 @@ export class AdminAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in admin signup controller:", error);
+            // console.error("Error in admin signup controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -80,7 +80,7 @@ export class AdminAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in admin verify otp for registration controller:", error);
+            // console.error("Error in admin verify otp for registration controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -126,7 +126,7 @@ export class AdminAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in admin signup controller:", error);
+            // console.error("Error in admin signup controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -162,7 +162,7 @@ export class AdminAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in admin forgot password controller:", error);
+            // console.error("Error in admin forgot password controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -198,7 +198,7 @@ export class AdminAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in admin verify otp for reset password controller:", error);
+            // console.error("Error in admin verify otp for reset password controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -234,7 +234,7 @@ export class AdminAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in admin reset password controller:", error);
+            // console.error("Error in admin reset password controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -279,7 +279,7 @@ export class AdminAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in admin send verication email controller:", error);
+            // console.error("Error in admin send verication email controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({

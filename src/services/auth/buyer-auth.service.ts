@@ -51,18 +51,38 @@ export class BuyerAuthService {
 
         // Check for existing username
         const existingBuyerByUsername = await this.buyerRepo.findBuyerByUsername(username);
-        if (
-            existingBuyerByUsername &&
-            existingUserByEmail?.isVerified === true
-        ) {
-            throw new HttpError(400, "Username already exists!");
+        if (existingBuyerByUsername) {
+            const linkedUser = await this.userRepo.findUserById(
+                existingBuyerByUsername.baseUserId.toString()
+            );
+
+            if (linkedUser?.isVerified) {
+                throw new HttpError(409, "Username already exists!");
+            }
         }
+
+        // if (
+        //     existingBuyerByUsername &&
+        //     existingUserByEmail?.isVerified === true
+        // ) {
+        //     throw new HttpError(409, "Username already exists!");
+        // }
 
         // Check for existing contact number
         const existingBuyerByContact = await this.buyerRepo.findBuyerByContact(contact);
-        if (existingBuyerByContact && existingUserByEmail?.isVerified === true) {
-            throw new HttpError(400, "Contact already exists!");
+        if (existingBuyerByContact) {
+            const linkedUser = await this.userRepo.findUserById(
+                existingBuyerByContact.baseUserId.toString()
+            );
+
+            if (linkedUser?.isVerified) {
+                throw new HttpError(409, "Contact already exists!");
+            }
         }
+
+        // if (existingBuyerByContact && existingUserByEmail?.isVerified === true) {
+        //     throw new HttpError(409, "Contact already exists!");
+        // }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const salt = bcrypt.genSaltSync(10);
@@ -78,7 +98,7 @@ export class BuyerAuthService {
         // Check for existing email
         if (existingUserByEmail) {
             if (existingUserByEmail?.isVerified) {
-                throw new HttpError(400, "Email already registered!");
+                throw new HttpError(409, "Email already registered!");
             }
 
             // Update existing unverified user
@@ -93,7 +113,7 @@ export class BuyerAuthService {
             }
 
             // If buyerProfile does not exist for this user, create one
-            buyerProfile = await this.buyerRepo.findBuyerById(newUser._id.toString());
+            buyerProfile = await this.buyerRepo.findBuyerByBaseUserId(newUser._id.toString());
 
             if (!buyerProfile) {
                 buyerProfile = await this.buyerRepo.createBuyer({

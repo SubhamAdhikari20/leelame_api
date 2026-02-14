@@ -46,9 +46,19 @@ export class SellerAuthService {
 
         // Check for existing contact number
         const existingSellerByContact = await this.sellerRepo.findSellerByContact(contact);
-        if (existingSellerByContact && existingUserByEmail?.isVerified === true) {
-            throw new HttpError(400, "Contact already exists!");
+        if (existingSellerByContact) {
+            const linkedUser = await this.userRepo.findUserById(
+                existingSellerByContact.baseUserId.toString()
+            );
+
+            if (linkedUser?.isVerified) {
+                throw new HttpError(409, "Contact already exists!");
+            }
         }
+        
+        // if (existingSellerByContact && existingUserByEmail?.isVerified === true) {
+        //     throw new HttpError(409, "Contact already exists!");
+        // }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expiryDate = new Date();
@@ -62,7 +72,7 @@ export class SellerAuthService {
         // Check for existing email
         if (existingUserByEmail) {
             if (existingUserByEmail?.isVerified) {
-                throw new HttpError(400, "Email already registered!");
+                throw new HttpError(409, "Email already registered!");
             }
 
             // Update existing unverified user
@@ -77,7 +87,7 @@ export class SellerAuthService {
             }
 
             // If sellerProfile does not exist for this user, create one
-            sellerProfile = await this.sellerRepo.findSellerById(newUser._id.toString());
+            sellerProfile = await this.sellerRepo.findSellerByBaseUserId(newUser._id.toString());
 
             if (!sellerProfile) {
                 sellerProfile = await this.sellerRepo.createSeller({

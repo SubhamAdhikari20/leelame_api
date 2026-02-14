@@ -4,11 +4,18 @@ import type { ApiResponseType } from "./../types/api-response.type.ts";
 
 
 export const sendResetPasswordVerificationEmail = async (
-    fullName: string,
-    email: string,
-    otp: string
+  fullName: string,
+  email: string,
+  otp: string
 ): Promise<ApiResponseType> => {
-    const html = `
+  if (process.env.NODE_ENV === "test") {
+    return {
+      success: true,
+      message: "Skipped sending email during test environment.",
+    };
+  }
+
+  const html = `
     <!DOCTYPE html>
     <html lang="en" dir="ltr">
       <head>
@@ -43,36 +50,36 @@ export const sendResetPasswordVerificationEmail = async (
     </html>
   `;
 
-    if (!email || !html) {
-        return { success: false, message: "Missing email or html content" };
-    }
-    try {
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.GMAIL_USER,
-                pass: process.env.GMAIL_APP_PASSWORD,
-            },
-        });
+  if (!email || !html) {
+    return { success: false, message: "Missing email or html content" };
+  }
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
 
-        await transporter.sendMail({
-            from: `"Leelame" <${process.env.GMAIL_USER}>`,
-            to: email,
-            subject: "Leelame | Your Verification Code",
-            html,
-        });
+    await transporter.sendMail({
+      from: `"Leelame" <${process.env.GMAIL_USER}>`,
+      to: email,
+      subject: "Leelame | Your Verification Code",
+      html,
+    });
 
-        return {
-            success: true,
-            message: "Verification email sent  successfully.",
-        };
-    }
-    catch (error) {
-        console.log("Error sending verification email: ", error);
+    return {
+      success: true,
+      message: "Verification email sent  successfully.",
+    };
+  }
+  catch (error) {
+    console.log("Error sending verification email: ", error);
 
-        return {
-            success: false,
-            message: "Failed to send verification email.",
-        };
-    }
+    return {
+      success: false,
+      message: "Failed to send verification email.",
+    };
+  }
 };

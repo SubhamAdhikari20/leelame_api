@@ -44,7 +44,7 @@ export class SellerAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller signup controller:", error);
+            // console.error("Error in seller signup controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -80,7 +80,7 @@ export class SellerAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller verify otp for registration controller:", error);
+            // console.error("Error in seller verify otp for registration controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -126,7 +126,7 @@ export class SellerAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller signup controller:", error);
+            // console.error("Error in seller signup controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -162,7 +162,7 @@ export class SellerAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller forgot password controller:", error);
+            // console.error("Error in seller forgot password controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -198,7 +198,7 @@ export class SellerAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller reset password controller:", error);
+            // console.error("Error in seller reset password controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -243,7 +243,7 @@ export class SellerAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller send verication email controller:", error);
+            // console.error("Error in seller send verication email controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
@@ -269,7 +269,7 @@ export class SellerAuthController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in seller logout controller:", error);
+            // console.error("Error in seller logout controller:", error);
 
             if (error instanceof HttpError) {
                 return res.status(error.status).json({

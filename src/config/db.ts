@@ -1,5 +1,6 @@
 // src/config/db.ts
 import mongoose from "mongoose";
+import { MONGODB_URI } from "./index.ts";
 
 type ConnectionObject = {
     isConnected?: number;
@@ -14,7 +15,7 @@ const connectDB = async (): Promise<void> => {
     }
 
     try {
-        const mongodbUri = process.env.MONGODB_URI;
+        const mongodbUri = MONGODB_URI;
         if (!mongodbUri) {
             console.error("Missing MONGODB_URI. Please add it to config/config.env or your environment variables.".red.bold);
             process.exit(1);

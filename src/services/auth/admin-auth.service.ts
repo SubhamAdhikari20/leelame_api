@@ -45,9 +45,19 @@ export class AdminAuthService {
 
         // Check for existing contact number
         const existingAdminByContact = await this.adminRepo.findAdminByContact(contact);
-        if (existingAdminByContact && existingUserByEmail?.isVerified === true) {
-            throw new HttpError(400, "Contact already exists!");
+        if (existingAdminByContact) {
+            const linkedUser = await this.userRepo.findUserById(
+                existingAdminByContact.baseUserId.toString()
+            );
+
+            if (linkedUser?.isVerified) {
+                throw new HttpError(409, "Contact already exists!");
+            }
         }
+
+        // if (existingAdminByContact && existingUserByEmail?.isVerified === true) {
+        //     throw new HttpError(409, "Contact already exists!");
+        // }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const salt = bcrypt.genSaltSync(10);
@@ -63,7 +73,7 @@ export class AdminAuthService {
         // Check for existing email
         if (existingUserByEmail) {
             if (existingUserByEmail?.isVerified) {
-                throw new HttpError(400, "Email already registered!");
+                throw new HttpError(409, "Email already registered!");
             }
 
             // Update existing unverified user
@@ -78,7 +88,7 @@ export class AdminAuthService {
             }
 
             // If adminProfile does not exist for this user, create one
-            adminProfile = await this.adminRepo.findAdminById(newUser._id.toString());
+            adminProfile = await this.adminRepo.findAdminByBaseUserId(newUser._id.toString());
 
             if (!adminProfile) {
                 adminProfile = await this.adminRepo.createAdmin({
