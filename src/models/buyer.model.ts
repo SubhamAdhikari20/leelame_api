@@ -71,6 +71,6 @@ const buyerSchema: Schema<IBuyer> = new Schema({
 );
 
 
-const Buyer = (mongoose.models.buyers as mongoose.Model<IBuyer>) ?? (mongoose.model<IBuyer>("buyers", buyerSchema));
+const BuyerModel = (mongoose.models.buyers as mongoose.Model<IBuyer>) ?? (mongoose.model<IBuyer>("buyers", buyerSchema));
 
-export default Buyer;
+export default BuyerModel;

@@ -13,6 +13,7 @@ import "colors";
 import buyerRoute from "./routes/buyer.route.ts";
 import sellerRoute from "./routes/seller.route.ts";
 import adminRoute from "./routes/admin.route.ts";
+import categoryRoute from "./routes/category.route.ts";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -120,6 +121,9 @@ app.use("/api/users/buyer", buyerRoute);
 app.use("/api/users/seller", sellerRoute);
 // app.use("/api/users/admin/login", authLimiter);
 app.use("/api/users/admin", adminRoute);
+
+// ---------------------------- Category Route -------------------------------
+app.use("/api/category", categoryRoute);
 
 app.get("/", (req: Request, res: Response) => {
     res.send("Hello, World!");

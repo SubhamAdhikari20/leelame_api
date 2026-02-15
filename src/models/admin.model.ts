@@ -44,6 +44,6 @@ const adminSchema: Schema<IAdmin> = new Schema({
     }
 );
 
-const Admin = (mongoose.models.admins as mongoose.Model<IAdmin>) ?? (mongoose.model<IAdmin>("admins", adminSchema));
+const AdminModel = (mongoose.models.admins as mongoose.Model<IAdmin>) ?? (mongoose.model<IAdmin>("admins", adminSchema));
 
-export default Admin;
+export default AdminModel;

@@ -86,6 +86,6 @@ const sellerSchema: Schema<ISeller> = new Schema({
     }
 );
 
-const Seller = (mongoose.models.sellers as mongoose.Model<ISeller>) ?? (mongoose.model<ISeller>("sellers", sellerSchema));
+const SellerModel = (mongoose.models.sellers as mongoose.Model<ISeller>) ?? (mongoose.model<ISeller>("sellers", sellerSchema));
 
-export default Seller;
+export default SellerModel;
