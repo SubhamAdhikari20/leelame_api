@@ -1,20 +1,20 @@
-// src/controllers/category.controller.ts
+// src/controllers/product.controller.ts
 import type { Request, Response } from "express";
-import { CategoryResponseDto, CreateCategoryDto, UpdateCategoryDto } from "./../dtos/category.dto.ts";
-import { CategoryService } from "./../services/category.service.ts";
+import { ProductResponseDto, CreateProductDto, UpdateProductDto } from "./../dtos/product.dto.ts";
+import { ProductService } from "./../services/product.service.ts";
 import { z } from "zod";
 import { HttpError } from "./../errors/http-error.ts";
 import asyncHandler from "./../middleware/async.middleware.ts";
 
 
-export class CategoryController {
-    private categoryService: CategoryService;
+export class ProductController {
+    private productService: ProductService;
 
-    constructor(categoryService: CategoryService) {
-        this.categoryService = categoryService;
+    constructor(productService: ProductService) {
+        this.productService = productService;
     }
 
-    createCategory = asyncHandler(async (req: Request, res: Response) => {
+    createProduct = asyncHandler(async (req: Request, res: Response) => {
         try {
             const tokenUserId = await req.user?._id;
             if (!tokenUserId || tokenUserId.toString() === "") {
@@ -25,7 +25,7 @@ export class CategoryController {
             }
 
             const body = await req.body;
-            const validatedData = CreateCategoryDto.safeParse(body);
+            const validatedData = CreateProductDto.safeParse(body);
 
             if (!validatedData.success) {
                 return res.status(400).json({
@@ -34,20 +34,32 @@ export class CategoryController {
                 });
             }
 
-            const result = await this.categoryService.createCategory(validatedData.data);
+            const productImages: Express.Multer.File[] | undefined = Array.isArray(req.files)
+                ? await req.files
+                : undefined;
+            const subFolder: string | undefined = await req.body.folder;
+            let result;
+            if (productImages && productImages.length > 0) {
+                result = await this.productService.createProduct(tokenUserId.toString(), validatedData.data, productImages, subFolder);
+            }
+            else {
+                result = await this.productService.createProduct(tokenUserId.toString(), validatedData.data);
+            }
 
-            const validatedResponseCategoryData = CreateCategoryDto.safeParse(result?.data);
-            if (!validatedResponseCategoryData.success) {
+            // const result = await this.productService.createProduct(tokenUserId.toString(), validatedData.data);
+
+            const validatedResponseProductData = CreateProductDto.safeParse(result?.data);
+            if (!validatedResponseProductData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseCategoryData.error)
+                    message: z.prettifyError(validatedResponseProductData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedResponseCategoryData.data,
+                data: validatedResponseProductData.data,
             });
         }
         catch (error: Error | any) {
@@ -65,13 +77,13 @@ export class CategoryController {
         }
     });
 
-    updateCategory = asyncHandler(async (req: Request, res: Response) => {
+    updateProduct = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const categoryId = await req.params.id;
-            if (!categoryId || categoryId.toString() === "") {
+            const productId = await req.params.id;
+            if (!productId || productId.toString() === "") {
                 return res.status(400).json({
                     success: false,
-                    message: "Params Error! Category id is not sent through params."
+                    message: "Params Error! Product id is not sent through params."
                 });
             }
 
@@ -84,7 +96,7 @@ export class CategoryController {
             }
 
             const body = await req.body;
-            const validatedData = UpdateCategoryDto.safeParse(body);
+            const validatedData = UpdateProductDto.safeParse(body);
 
             if (!validatedData.success) {
                 return res.status(400).json({
@@ -93,19 +105,32 @@ export class CategoryController {
                 });
             }
 
-            const result = await this.categoryService.updateCategory(categoryId.toString(), validatedData.data);
-            const validatedResponseCategoryData = CategoryResponseDto.safeParse(result?.data);
-            if (!validatedResponseCategoryData.success) {
+            const productImages: Express.Multer.File[] | undefined = Array.isArray(req.files)
+                ? await req.files
+                : undefined;
+            const subFolder: string | undefined = await req.body.folder;
+            let result;
+            if (productImages && productImages.length > 0) {
+                result = await this.productService.updateProduct(productId.toString(), validatedData.data, productImages, subFolder);
+            }
+            else {
+                result = await this.productService.updateProduct(productId.toString(), validatedData.data);
+            }
+
+            // const result = await this.productService.updateProduct(productId.toString(), validatedData.data);
+
+            const validatedResponseProductData = ProductResponseDto.safeParse(result?.data);
+            if (!validatedResponseProductData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseCategoryData.error)
+                    message: z.prettifyError(validatedResponseProductData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedResponseCategoryData.data,
+                data: validatedResponseProductData.data,
             });
         }
         catch (error: Error | any) {
@@ -123,13 +148,13 @@ export class CategoryController {
         }
     });
 
-    deleteCategory = asyncHandler(async (req: Request, res: Response) => {
+    deleteProduct = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const categoryId = await req.params.id;
-            if (!categoryId || categoryId.toString() === "") {
+            const productId = await req.params.id;
+            if (!productId || productId.toString() === "") {
                 return res.status(400).json({
                     success: false,
-                    message: "Params Error! Category id is not sent through params."
+                    message: "Params Error! Product id is not sent through params."
                 });
             }
 
@@ -141,7 +166,7 @@ export class CategoryController {
                 });
             }
 
-            const result = await this.categoryService.deleteCategory(categoryId.toString());
+            const result = await this.productService.deleteProduct(productId.toString());
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
@@ -163,13 +188,13 @@ export class CategoryController {
         }
     });
 
-    getCategoryById = asyncHandler(async (req: Request, res: Response) => {
+    getProductById = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const categoryId = await req.params.id;
-            if (!categoryId || categoryId.toString() === "") {
+            const productId = await req.params.id;
+            if (!productId || productId.toString() === "") {
                 return res.status(400).json({
                     success: false,
-                    message: "Params Error! Category id is not sent through params."
+                    message: "Params Error! Product id is not sent through params."
                 });
             }
 
@@ -181,20 +206,20 @@ export class CategoryController {
                 });
             }
 
-            const result = await this.categoryService.getCategoryById(categoryId.toString());
+            const result = await this.productService.getProductById(productId.toString());
 
-            const validatedResponseCategoryData = CategoryResponseDto.safeParse(result?.data);
-            if (!validatedResponseCategoryData.success) {
+            const validatedResponseProductData = ProductResponseDto.safeParse(result?.data);
+            if (!validatedResponseProductData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseCategoryData.error)
+                    message: z.prettifyError(validatedResponseProductData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedResponseCategoryData.data,
+                data: validatedResponseProductData.data,
             });
         }
         catch (error: Error | any) {
@@ -212,22 +237,22 @@ export class CategoryController {
         }
     });
 
-    getAllCategories = asyncHandler(async (req: Request, res: Response) => {
+    getAllProducts = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const result = await this.categoryService.getAllCategories();
+            const result = await this.productService.getAllProducts();
 
-            const validatedCategorysData = z.array(CategoryResponseDto).safeParse(result?.data);
-            if (!validatedCategorysData.success) {
+            const validatedProductsData = z.array(ProductResponseDto).safeParse(result?.data);
+            if (!validatedProductsData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedCategorysData.error)
+                    message: z.prettifyError(validatedProductsData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedCategorysData.data,
+                data: validatedProductsData.data,
             });
         }
         catch (error: Error | any) {

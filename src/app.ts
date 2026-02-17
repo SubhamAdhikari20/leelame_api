@@ -14,6 +14,7 @@ import buyerRoute from "./routes/buyer.route.ts";
 import sellerRoute from "./routes/seller.route.ts";
 import adminRoute from "./routes/admin.route.ts";
 import categoryRoute from "./routes/category.route.ts";
+import productRoute from "./routes/product.route.ts";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -124,6 +125,9 @@ app.use("/api/users/admin", adminRoute);
 
 // ---------------------------- Category Route -------------------------------
 app.use("/api/category", categoryRoute);
+
+// ---------------------------- Product Route -------------------------------
+app.use("/api/product", productRoute);
 
 app.get("/", (req: Request, res: Response) => {
     res.send("Hello, World!");

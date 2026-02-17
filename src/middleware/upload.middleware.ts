@@ -34,8 +34,8 @@ if (MEDIA_STORAGE_PROVIDER === "local") {
             else if (file.fieldname === "profile-picture-admin") {
                 subFolder = "profile-pictures/admins";
             }
-            else if (file.fieldname === "productImage") {
-                subFolder = "prod-img-";
+            else if (file.fieldname === "product-images") {
+                subFolder = "product-images";
             }
 
             // const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -55,7 +55,7 @@ if (MEDIA_STORAGE_PROVIDER === "local") {
             ) {
                 prefix = "pro-pic-";
             }
-            else if (file.fieldname === "productImage") {
+            else if (file.fieldname === "product-images") {
                 prefix = "prod-img-";
             }
             cb(null, `${prefix}${uuidv4()}${ext}`);

@@ -65,7 +65,7 @@ export class CategoryService {
         const respose: CategoryResponseDtoType = {
             success: true,
             message: "Category updated successfully.",
-            status: 201,
+            status: 200,
             data: {
                 _id: updateCategory._id.toString(),
                 categoryName: updateCategory.categoryName,
