@@ -6,13 +6,18 @@ export const productNameValidation = z
     .string()
     .min(2, { message: "Product Name must be atleast 2 characters long" })
     .max(50, { message: "Product Name must not exceed 50 characters" })
-    .regex(/^[a-zA-Z0-9 &]+$/, { message: "Product Name must contain only alphabets, numbers and spaces" });
+    .regex(/^[a-zA-Z0-9 &()\-_\[\]{}|/]+$/, { message: "Product Name must contain only alphabets, numbers, spaces, and common punctuation (brackets, slash, hyphens, etc." });
+// .regex(/^[a-zA-Z0-9 &]+$/, { message: "Product Name must contain only alphabets, numbers and spaces" });
 
 export const productDescriptionValidation = z
     .string()
-    .min(5, { message: "Product Description must be atleast 5 characters long" })
     .max(500, { message: "Product Description must not exceed 500 characters" })
-    .regex(/^[a-zA-Z0-9 &.,!?]+$/, { message: "Product Description must contain only alphabets, numbers and basic punctuation" });
+    .regex(
+        /^[a-zA-Z0-9\s.,!?@#$%^&*()\-_+=\[\]{}|;:'"\\<>/`~]+$/i,
+        {
+            message: "Product Description can only contain letters, numbers, spaces, and common punctuation (brackets, quotes, hyphens, etc.)"
+        }
+    );
 
 export const productCommissionValidation = z
     .coerce

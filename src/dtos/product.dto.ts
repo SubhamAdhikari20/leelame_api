@@ -10,8 +10,8 @@ export const CreateProductDto = z.object({
     startPrice: productStartPriceValidation,
     bidIntervalPrice: productBidIntervalPriceValidation,
     endDate: z.coerce.date(),
-    // productImageUrls: z.array(z.string()),
-    categoryId: z.string()
+    categoryId: z.string(),
+    conditionId: z.string()
 });
 export type CreateProductDtoType = z.infer<typeof CreateProductDto>;
 
@@ -23,7 +23,8 @@ export const UpdateProductDto = z.object({
     bidIntervalPrice: productBidIntervalPriceValidation,
     endDate: z.coerce.date(),
     removedExisitingProductImageUrls: z.array(z.string()),
-    categoryId: z.string()
+    categoryId: z.string(),
+    conditionId: z.string()
 });
 export type UpdateProductDtoType = z.infer<typeof UpdateProductDto>;
 
@@ -33,7 +34,6 @@ export const ProductResponseDto = z.object({
     _id: z.string(),
     productName: z.string(),
     description: z.string().nullish(),
-    categoryId: z.string(),
     commission: z.number(),
     startPrice: z.number(),
     currentBidPrice: z.number(),
@@ -43,6 +43,8 @@ export const ProductResponseDto = z.object({
     isVerified: z.boolean(),
     isSoldOut: z.boolean(),
     sellerId: z.string(),
+    categoryId: z.string(),
+    conditionId: z.string(),
     soldToBuyerId: z.string().nullish(),
     createdAt: z.date().nullish(),
     updatedAt: z.date().nullish(),

@@ -27,7 +27,7 @@ export class ProductService {
             );
         }
 
-        const { productName, description, startPrice, bidIntervalPrice, endDate, categoryId } = createProductData;
+        const { productName, description, startPrice, bidIntervalPrice, endDate, categoryId, conditionId } = createProductData;
 
         const createProductPayload: any = {
             productName: productName,
@@ -37,7 +37,8 @@ export class ProductService {
             bidIntervalPrice: bidIntervalPrice,
             endDate: endDate,
             sellerId: sellerId,
-            categoryId: categoryId
+            categoryId: categoryId,
+            conditionId: conditionId
         };
 
         if (productImageUrls && productImageUrls.length > 0) {
@@ -62,7 +63,6 @@ export class ProductService {
                 _id: newProduct._id.toString(),
                 productName: newProduct.productName,
                 description: newProduct.description,
-                categoryId: newProduct.categoryId.toString(),
                 commission: newProduct.commission,
                 startPrice: newProduct.startPrice,
                 currentBidPrice: newProduct.currentBidPrice,
@@ -72,6 +72,8 @@ export class ProductService {
                 isVerified: newProduct.isVerified,
                 isSoldOut: newProduct.isSoldOut,
                 sellerId: newProduct.sellerId.toString(),
+                categoryId: newProduct.categoryId.toString(),
+                conditionId: newProduct.conditionId.toString(),
                 soldToBuyerId: newProduct.soldToBuyerId?.toString(),
                 createdAt: newProduct.createdAt,
                 updatedAt: newProduct.updatedAt,
@@ -95,7 +97,7 @@ export class ProductService {
             );
         }
 
-        const { productName, description, startPrice, bidIntervalPrice, endDate, categoryId, removedExisitingProductImageUrls } = updateProductData;
+        const { productName, description, startPrice, bidIntervalPrice, endDate, categoryId, conditionId, removedExisitingProductImageUrls } = updateProductData;
 
         const decodedProductId = decodeURIComponent(productId);
         const existingProductById = await this.productRepo.findProductById(decodedProductId);
@@ -109,7 +111,8 @@ export class ProductService {
             startPrice: startPrice,
             bidIntervalPrice: bidIntervalPrice,
             endDate: endDate,
-            categoryId: categoryId
+            categoryId: categoryId,
+            conditionId: conditionId
         };
 
         let finalProductImageUrls = [...(existingProductById.productImageUrls || [])];
@@ -144,7 +147,6 @@ export class ProductService {
                 _id: updatedProduct._id.toString(),
                 productName: updatedProduct.productName,
                 description: updatedProduct.description,
-                categoryId: updatedProduct.categoryId.toString(),
                 commission: updatedProduct.commission,
                 startPrice: updatedProduct.startPrice,
                 currentBidPrice: updatedProduct.currentBidPrice,
@@ -154,6 +156,8 @@ export class ProductService {
                 isVerified: updatedProduct.isVerified,
                 isSoldOut: updatedProduct.isSoldOut,
                 sellerId: updatedProduct.sellerId.toString(),
+                categoryId: updatedProduct.categoryId.toString(),
+                conditionId: updatedProduct.conditionId.toString(),
                 soldToBuyerId: updatedProduct.soldToBuyerId?.toString(),
                 createdAt: updatedProduct.createdAt,
                 updatedAt: updatedProduct.updatedAt,
@@ -192,7 +196,6 @@ export class ProductService {
                 _id: existingProductById._id.toString(),
                 productName: existingProductById.productName,
                 description: existingProductById.description,
-                categoryId: existingProductById.categoryId.toString(),
                 commission: existingProductById.commission,
                 startPrice: existingProductById.startPrice,
                 currentBidPrice: existingProductById.currentBidPrice,
@@ -202,6 +205,8 @@ export class ProductService {
                 isVerified: existingProductById.isVerified,
                 isSoldOut: existingProductById.isSoldOut,
                 sellerId: existingProductById.sellerId.toString(),
+                categoryId: existingProductById.categoryId.toString(),
+                conditionId: existingProductById.conditionId.toString(),
                 soldToBuyerId: existingProductById.soldToBuyerId?.toString(),
                 createdAt: existingProductById.createdAt,
                 updatedAt: existingProductById.updatedAt,
@@ -222,7 +227,6 @@ export class ProductService {
                     _id: product._id.toString(),
                     productName: product.productName,
                     description: product.description,
-                    categoryId: product.categoryId.toString(),
                     commission: product.commission,
                     startPrice: product.startPrice,
                     currentBidPrice: product.currentBidPrice,
@@ -232,6 +236,8 @@ export class ProductService {
                     isVerified: product.isVerified,
                     isSoldOut: product.isSoldOut,
                     sellerId: product.sellerId.toString(),
+                    categoryId: product.categoryId.toString(),
+                    conditionId: product.conditionId.toString(),
                     soldToBuyerId: product.soldToBuyerId?.toString(),
                     createdAt: product.createdAt,
                     updatedAt: product.updatedAt,

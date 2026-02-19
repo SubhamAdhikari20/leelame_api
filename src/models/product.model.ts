@@ -3,9 +3,10 @@ import mongoose, { Schema, Document } from "mongoose";
 import type { Product } from "./../types/product.type.ts";
 
 
-export interface IProduct extends Omit<Product, ("sellerId" | "categoryId" | "soldToBuyerId" | "endDate")>, Document {
+export interface IProduct extends Omit<Product, ("sellerId" | "categoryId" | "conditionId" | "soldToBuyerId" | "endDate")>, Document {
     sellerId: Schema.Types.ObjectId | string,
     categoryId: Schema.Types.ObjectId | string,
+    conditionId: Schema.Types.ObjectId | string,
     soldToBuyerId: Schema.Types.ObjectId | string | null | undefined,
     endDate: Date;
     createdAt: Date;
@@ -33,6 +34,12 @@ const productSchema: Schema<IProduct> = new Schema({
     categoryId: {
         type: Schema.Types.ObjectId,
         ref: "categories",
+        // unique: true,
+        // sparse: true,
+    },
+    conditionId: {
+        type: Schema.Types.ObjectId,
+        ref: "product_conditions",
         // unique: true,
         // sparse: true,
     },

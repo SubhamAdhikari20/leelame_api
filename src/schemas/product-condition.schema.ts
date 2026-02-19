@@ -6,7 +6,7 @@ export const productConditionNameValidation = z
     .string()
     .min(2, { message: "Product Condition Name must be atleast 2 characters long" })
     .max(50, { message: "Product Condition Name must not exceed 50 characters" })
-    .regex(/^[a-zA-Z0-9 &]+$/, { message: "Product Condition Name must contain only alphabets, numbers and spaces" });
+    .regex(/^[a-zA-Z0-9 &()\-_\[\]{}|/]+$/, { message: "Product Condition Name must contain only alphabets, numbers, spaces, and common punctuation (brackets, slash, hyphens, etc." });
 
 export const productConditionDescriptionValidation = z
     .string()
