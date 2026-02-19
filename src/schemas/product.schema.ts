@@ -1,4 +1,4 @@
-// src/dtos/product.schema.ts
+// src/schemas/product.schema.ts
 import { z } from "zod";
 
 
@@ -15,18 +15,22 @@ export const productDescriptionValidation = z
     .regex(/^[a-zA-Z0-9 &.,!?]+$/, { message: "Product Description must contain only alphabets, numbers and basic punctuation" });
 
 export const productCommissionValidation = z
+    .coerce
     .number()
     .min(0, { message: "Product Commission must be a positive number" })
     .max(100, { message: "Product Commission must not exceed 100%" });
 
 export const productStartPriceValidation = z
+    .coerce
     .number()
     .min(0, { message: "Product Start Price must be a positive number" });
 
 export const productCurrentBidPriceValidation = z
+    .coerce
     .number()
     .min(0, { message: "Product Current Bid Price must be a positive number" });
 
 export const productBidIntervalPriceValidation = z
+    .coerce
     .number()
     .min(0, { message: "Product Bid Interval Price must be a positive number" });

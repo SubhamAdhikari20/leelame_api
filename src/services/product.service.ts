@@ -33,6 +33,7 @@ export class ProductService {
             productName: productName,
             description: description,
             startPrice: startPrice,
+            currentBidPrice: startPrice,
             bidIntervalPrice: bidIntervalPrice,
             endDate: endDate,
             sellerId: sellerId,
@@ -44,7 +45,6 @@ export class ProductService {
         }
 
         const newProduct = await this.productRepo.createProduct(createProductPayload);
-
         if (!newProduct) {
             if (productImageUrls && productImageUrls.length > 0) {
                 await Promise.all(
@@ -95,7 +95,7 @@ export class ProductService {
             );
         }
 
-        const { productName, description, startPrice, bidIntervalPrice, endDate, categoryId } = updateProductData;
+        const { productName, description, startPrice, bidIntervalPrice, endDate, categoryId, removedExisitingProductImageUrls } = updateProductData;
 
         const decodedProductId = decodeURIComponent(productId);
         const existingProductById = await this.productRepo.findProductById(decodedProductId);
@@ -112,15 +112,22 @@ export class ProductService {
             categoryId: categoryId
         };
 
-        if (newProductImageUrls && newProductImageUrls.length > 0) {
-            const existingProductImages = existingProductById.productImageUrls || [];
-            updateProductDetailsPayload.productImageUrls = [...existingProductImages, ...newProductImageUrls];
+        let finalProductImageUrls = [...(existingProductById.productImageUrls || [])];
+        // Remove deleted images
+        if (removedExisitingProductImageUrls && removedExisitingProductImageUrls.length > 0) {
+            finalProductImageUrls = finalProductImageUrls.filter(imageUrl => !removedExisitingProductImageUrls.includes(imageUrl));
+            await Promise.all(removedExisitingProductImageUrls.map(imageUrl => processDeleteUpload(imageUrl)));
         }
 
-        const updatedProduct = await this.productRepo.updateProduct(existingProductById._id.toString(), updateProductDetailsPayload);
+        if (newProductImageUrls && (newProductImageUrls.length > 0)) {
+            finalProductImageUrls = [...finalProductImageUrls, ...newProductImageUrls];
+        }
 
+        updateProductDetailsPayload.productImageUrls = finalProductImageUrls;
+
+        const updatedProduct = await this.productRepo.updateProduct(existingProductById._id.toString(), updateProductDetailsPayload);
         if (!updatedProduct) {
-            if (newProductImageUrls && newProductImageUrls.length > 0) {
+            if (newProductImageUrls && (newProductImageUrls.length > 0)) {
                 await Promise.all(
                     newProductImageUrls.map(newProductImageUrl => processDeleteUpload(newProductImageUrl))
                 );

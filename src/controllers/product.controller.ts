@@ -5,6 +5,7 @@ import { ProductService } from "./../services/product.service.ts";
 import { z } from "zod";
 import { HttpError } from "./../errors/http-error.ts";
 import asyncHandler from "./../middleware/async.middleware.ts";
+import { normalizeRemoveHttpUrl } from "./../helpers/http-url.helper.ts";
 
 
 export class ProductController {
@@ -25,7 +26,22 @@ export class ProductController {
             }
 
             const body = await req.body;
-            const validatedData = CreateProductDto.safeParse(body);
+            const rawData = body.productData;
+            let validatedData;
+            if (rawData) {
+                const parsedData = JSON.parse(rawData);
+                // console.log("rawData: ", rawData);
+                // console.log("parsedData: ", parsedData);
+
+                validatedData = CreateProductDto.safeParse(parsedData);
+                // console.log("validatedData: ", validatedData);
+            }
+            else {
+                // console.log("body: ", body);
+
+                validatedData = CreateProductDto.safeParse(body);
+                // console.log("validatedData: ", validatedData);
+            }
 
             if (!validatedData.success) {
                 return res.status(400).json({
@@ -46,8 +62,6 @@ export class ProductController {
                 result = await this.productService.createProduct(tokenUserId.toString(), validatedData.data);
             }
 
-            // const result = await this.productService.createProduct(tokenUserId.toString(), validatedData.data);
-
             const validatedResponseProductData = CreateProductDto.safeParse(result?.data);
             if (!validatedResponseProductData.success) {
                 return res.status(400).json({
@@ -63,6 +77,7 @@ export class ProductController {
             });
         }
         catch (error: Error | any) {
+            console.log("Error in create product controller: ", error.message);
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
                     success: false,
@@ -96,7 +111,22 @@ export class ProductController {
             }
 
             const body = await req.body;
-            const validatedData = UpdateProductDto.safeParse(body);
+            const rawData = body.productData;
+            let validatedData;
+            if (rawData) {
+                const parsedData = JSON.parse(rawData);
+                // console.log("rawData: ", rawData);
+                // console.log("parsedData: ", parsedData);
+
+                validatedData = UpdateProductDto.safeParse(parsedData);
+                // console.log("validatedData: ", validatedData);
+            }
+            else {
+                // console.log("body: ", body);
+
+                validatedData = UpdateProductDto.safeParse(body);
+                // console.log("validatedData: ", validatedData);
+            }
 
             if (!validatedData.success) {
                 return res.status(400).json({
@@ -105,19 +135,20 @@ export class ProductController {
                 });
             }
 
+            const updateProductValidatedData = { ...validatedData.data, removedExisitingProductImageUrls: validatedData.data.removedExisitingProductImageUrls.map((removedExisitingProductImageUrl) => normalizeRemoveHttpUrl(removedExisitingProductImageUrl)).filter((url) => url !== null) as string[] };
+            // console.log("updateProductValidatedData: ", updateProductValidatedData);
+
             const productImages: Express.Multer.File[] | undefined = Array.isArray(req.files)
                 ? await req.files
                 : undefined;
             const subFolder: string | undefined = await req.body.folder;
             let result;
             if (productImages && productImages.length > 0) {
-                result = await this.productService.updateProduct(productId.toString(), validatedData.data, productImages, subFolder);
+                result = await this.productService.updateProduct(productId.toString(), updateProductValidatedData, productImages, subFolder);
             }
             else {
-                result = await this.productService.updateProduct(productId.toString(), validatedData.data);
+                result = await this.productService.updateProduct(productId.toString(), updateProductValidatedData);
             }
-
-            // const result = await this.productService.updateProduct(productId.toString(), validatedData.data);
 
             const validatedResponseProductData = ProductResponseDto.safeParse(result?.data);
             if (!validatedResponseProductData.success) {

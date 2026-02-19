@@ -9,7 +9,7 @@ export const CreateProductDto = z.object({
     description: productDescriptionValidation.nullish(),
     startPrice: productStartPriceValidation,
     bidIntervalPrice: productBidIntervalPriceValidation,
-    endDate: z.date(),
+    endDate: z.coerce.date(),
     // productImageUrls: z.array(z.string()),
     categoryId: z.string()
 });
@@ -21,8 +21,8 @@ export const UpdateProductDto = z.object({
     description: productDescriptionValidation.nullish(),
     startPrice: productStartPriceValidation,
     bidIntervalPrice: productBidIntervalPriceValidation,
-    endDate: z.date(),
-    // productImageUrls: z.array(z.string()),
+    endDate: z.coerce.date(),
+    removedExisitingProductImageUrls: z.array(z.string()),
     categoryId: z.string()
 });
 export type UpdateProductDtoType = z.infer<typeof UpdateProductDto>;

@@ -142,9 +142,10 @@ export const processMultipleUploads = async (
             const PUBLIC_DIR = path.join(process.cwd(), "public");
             const relativePath = path.relative(PUBLIC_DIR, file.path);
             const urlPath = relativePath.split(path.sep).join("/");
-            const baseUrl = (BASE_URL || "").replace(/\/$/, "");
-            const publicUrl = `${baseUrl}/${urlPath.replace(/^\/+/, "")}`;
+            const publicUrl = `/${urlPath.replace(/^\/+/, "")}`;
             return publicUrl;
+            // const baseUrl = (BASE_URL || "").replace(/\/$/, "");
+            // const publicUrl = `${baseUrl}/${urlPath.replace(/^\/+/, "")}`;
         });
 
         // return Promise.all(files.map(async (file) => {

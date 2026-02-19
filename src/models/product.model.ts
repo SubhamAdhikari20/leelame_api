@@ -17,7 +17,7 @@ const productSchema: Schema<IProduct> = new Schema({
         type: Schema.Types.ObjectId,
         ref: "sellers",
         required: true,
-        unique: true
+        // unique: true
     },
     productName: {
         type: String,
@@ -33,8 +33,8 @@ const productSchema: Schema<IProduct> = new Schema({
     categoryId: {
         type: Schema.Types.ObjectId,
         ref: "categories",
-        unique: true,
-        sparse: true,
+        // unique: true,
+        // sparse: true,
     },
     commission: {
         type: Number,
@@ -73,8 +73,8 @@ const productSchema: Schema<IProduct> = new Schema({
     soldToBuyerId: {
         type: Schema.Types.ObjectId,
         ref: "buyers",
-        unique: true,
-        sparse: true,
+        // unique: true,
+        // sparse: true,
         default: null
     }
 },
