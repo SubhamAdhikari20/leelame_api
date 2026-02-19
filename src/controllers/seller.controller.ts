@@ -254,6 +254,41 @@ export class SellerController {
         }
     });
 
+    getAllSellers = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const result = await this.sellerService.getAllSellers();
+
+            const validatedSellersData = z.array(SellerResponseDto).safeParse(result?.users);
+            if (!validatedSellersData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedSellersData.error)
+                });
+            }
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+                users: validatedSellersData.data,
+            });
+        }
+        catch (error: Error | any) {
+            console.error("Error in deleting seller account controller:", error);
+
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
     getSellerByEmail = asyncHandler(async (req: Request, res: Response) => {
         try {
             const email = await req.params.email;

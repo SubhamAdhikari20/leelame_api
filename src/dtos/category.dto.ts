@@ -6,7 +6,7 @@ import { categoryNameValidation, categoryDescriptionValidation, categoryStatusVa
 // Create Category DTO
 export const CreateCategoryDto = z.object({
     categoryName: categoryNameValidation,
-    description: categoryDescriptionValidation,
+    description: categoryDescriptionValidation.nullish(),
     categoryStatus: categoryStatusValidation,
 });
 export type CreateCategoryDtoType = z.infer<typeof CreateCategoryDto>;
@@ -14,7 +14,7 @@ export type CreateCategoryDtoType = z.infer<typeof CreateCategoryDto>;
 // Update Category DTO
 export const UpdateCategoryDto = z.object({
     categoryName: categoryNameValidation,
-    description: categoryDescriptionValidation,
+    description: categoryDescriptionValidation.nullish(),
     categoryStatus: categoryStatusValidation,
 });
 export type UpdateCategoryDtoType = z.infer<typeof UpdateCategoryDto>;

@@ -29,7 +29,7 @@ export class CategoryService {
             throw new HttpError(400, "Category is not created!");
         }
 
-        const respose: CategoryResponseDtoType = {
+        const response: CategoryResponseDtoType = {
             success: true,
             message: "Category created successfully.",
             status: 201,
@@ -40,7 +40,7 @@ export class CategoryService {
                 categoryStatus: newCategory.categoryStatus,
             }
         };
-        return respose;
+        return response;
     };
 
     updateCategory = async (categoryId: string, updateCategoryData: UpdateCategoryDtoType): Promise<CategoryResponseDtoType> => {
@@ -62,7 +62,7 @@ export class CategoryService {
             throw new HttpError(400, "Category is not updated!");
         }
 
-        const respose: CategoryResponseDtoType = {
+        const response: CategoryResponseDtoType = {
             success: true,
             message: "Category updated successfully.",
             status: 200,
@@ -73,7 +73,7 @@ export class CategoryService {
                 categoryStatus: updateCategory.categoryStatus,
             }
         };
-        return respose;
+        return response;
     };
 
     deleteCategory = async (categoryId: string): Promise<CategoryResponseDtoType> => {
@@ -129,12 +129,12 @@ export class CategoryService {
             })
         );
 
-        const respose: AllCategoriesResponseDtoType = {
+        const response: AllCategoriesResponseDtoType = {
             success: true,
             message: "All categories fetched successfully.",
             status: 200,
             data: categories
         };
-        return respose;
+        return response;
     };
 }

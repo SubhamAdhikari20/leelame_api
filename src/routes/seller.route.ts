@@ -38,6 +38,7 @@ router.get("/logout", sellerAuthMiddleware.protect, sellerAuthController.logoutS
 router.put("/update-profile-details/:id", sellerAuthMiddleware.protect, sellerController.updateSellerProfileDetails);
 router.put("/upload-profile-picture/:id", sellerAuthMiddleware.protect, upload.single("profile-picture-seller"), sellerController.uploadProfilePicture);
 router.delete("/delete-account/:id", sellerAuthMiddleware.protect, sellerController.deleteSellerAccount);
+router.get("/get-all-sellers", sellerController.getAllSellers);
 
 // Get Current Admin Dynamic Route
 router.get("/:id", sellerAuthMiddleware.protect, sellerController.getCurrentSeller);

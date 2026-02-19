@@ -1,5 +1,5 @@
 // src/services/existingSellerByBaseUserId.service.ts
-import type { SellerResponseDtoType, UpdateSellerProfileDetailsDtoType, UploadImageSellerResponseDtoType } from "./../dtos/seller.dto.ts";
+import type { AllSellersResponseDtoType, SellerResponseDtoType, UpdateSellerProfileDetailsDtoType, UploadImageSellerResponseDtoType } from "./../dtos/seller.dto.ts";
 import type { SellerRepositoryInterface } from "./../interfaces/seller.repository.interface.ts";
 import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
@@ -174,6 +174,48 @@ export class SellerService {
         };
         return response;
     }
+
+    getAllSellers = async (): Promise<AllSellersResponseDtoType | null> => {
+        const sellers = await this.sellerRepo.getAllSellers();
+        if (!sellers) {
+            throw new HttpError(404, "Sellers could not be fetched!");
+        }
+
+        const users = await Promise.all(
+            sellers.map(async (seller) => {
+                const baseUser = seller.baseUserId
+                    ? await this.userRepo.findUserById(seller.baseUserId.toString())
+                    : null;
+
+                if (!baseUser) {
+                    throw new HttpError(404, `Base user not found for seller ID: ${seller._id.toString()}`);
+                }
+
+                return {
+                    _id: seller._id.toString(),
+                    email: baseUser.email,
+                    role: baseUser.role,
+                    isVerified: Boolean(baseUser.isVerified),
+                    baseUserId: seller.baseUserId.toString() ?? baseUser._id.toString(),
+                    fullName: seller.fullName,
+                    contact: seller.contact,
+                    isPermanentlyBanned: Boolean(baseUser.isPermanentlyBanned),
+                    profilePictureUrl: seller.profilePictureUrl,
+                    bio: seller.bio,
+                    createdAt: seller.createdAt ?? new Date(seller.createdAt),
+                    updatedAt: seller.updatedAt ?? new Date(seller.updatedAt),
+                };
+            })
+        );
+
+        const respose: AllSellersResponseDtoType = {
+            success: true,
+            message: "All sellers fetched successfully.",
+            status: 200,
+            users: users
+        };
+        return respose;
+    };
 
     getSellerByEmail = async (email: string): Promise<SellerResponseDtoType | null> => {
         if (!email || email.trim() === "") {
