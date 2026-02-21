@@ -25,6 +25,6 @@ router.delete("/delete-product/:id", sellerAuthMiddleware.protect, productContro
 router.get("/get-all-products", productController.getAllProducts);
 
 // Get Product By ID Dynamic Route
-router.get("/:id", sellerAuthMiddleware.protect, productController.getProductById);
+router.get("/:id", productController.getProductById);
 
 export default router;

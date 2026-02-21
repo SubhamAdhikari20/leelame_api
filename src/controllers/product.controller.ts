@@ -229,13 +229,13 @@ export class ProductController {
                 });
             }
 
-            const tokenUserId = await req.user?._id;
-            if (!tokenUserId || tokenUserId.toString() === "") {
-                return res.status(400).json({
-                    success: false,
-                    message: "Token Error! Token user id not found."
-                });
-            }
+            // const tokenUserId = await req.user?._id;
+            // if (!tokenUserId || tokenUserId.toString() === "") {
+            //     return res.status(400).json({
+            //         success: false,
+            //         message: "Token Error! Token user id not found."
+            //     });
+            // }
 
             const result = await this.productService.getProductById(productId.toString());
 

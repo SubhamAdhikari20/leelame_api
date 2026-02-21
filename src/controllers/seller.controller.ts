@@ -254,6 +254,49 @@ export class SellerController {
         }
     });
 
+    getSellerById = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const sellerId = await req.params.id;
+            if (!sellerId || sellerId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Params Error! Seller id is not sent through params."
+                });
+            }
+
+            const result = await this.sellerService.getCurrentSellerUser(sellerId.toString());
+
+            const validatedResponseSellerData = SellerResponseDto.safeParse(result?.user);
+            if (!validatedResponseSellerData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedResponseSellerData.error)
+                });
+            }
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+                user: validatedResponseSellerData.data,
+            });
+        }
+        catch (error: Error | any) {
+            console.error("Error in fetching seller data controller:", error);
+
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
     getAllSellers = asyncHandler(async (req: Request, res: Response) => {
         try {
             const result = await this.sellerService.getAllSellers();

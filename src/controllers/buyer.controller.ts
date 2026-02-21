@@ -253,6 +253,49 @@ export class BuyerController {
         }
     });
 
+    getBuyerById = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const buyerId = await req.params.id;
+            if (!buyerId || buyerId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Params Error! Buyer id is not sent through params."
+                });
+            }
+
+            const result = await this.buyerService.getCurrentBuyerUser(buyerId.toString());
+
+            const validatedResponseBuyerData = BuyerResponseDto.safeParse(result?.user);
+            if (!validatedResponseBuyerData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedResponseBuyerData.error)
+                });
+            }
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+                user: validatedResponseBuyerData.data,
+            });
+        }
+        catch (error: Error | any) {
+            console.error("Error in fetching buyer data controller:", error);
+
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
     getBuyerByEmail = asyncHandler(async (req: Request, res: Response) => {
         try {
             const email = await req.params.email;
