@@ -23,6 +23,8 @@ router.post("/create-product", sellerAuthMiddleware.protect, upload.array("produ
 router.put("/update-product-details/:id", sellerAuthMiddleware.protect, upload.array("product-images"), productController.updateProduct);
 router.delete("/delete-product/:id", sellerAuthMiddleware.protect, productController.deleteProduct);
 router.get("/get-all-products", productController.getAllProducts);
+router.get("/get-all-products/:sellerId", productController.findAllProductsBySellerId);
+router.get("/get-all-products/:buyerId", productController.findAllProductsByBuyerId);
 
 // Get Product By ID Dynamic Route
 router.get("/:id", productController.getProductById);

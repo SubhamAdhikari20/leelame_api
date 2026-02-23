@@ -168,9 +168,19 @@ export class ProductService {
 
     deleteProduct = async (productId: string): Promise<ProductResponseDtoType> => {
         const decodedProductId = decodeURIComponent(productId);
+
+        const existingProductById = await this.productRepo.findProductById(decodedProductId);
+        if (!existingProductById) {
+            throw new HttpError(404, "Product with the product id not found!");
+        }
+
         const deletedProduct = await this.productRepo.deleteProduct(decodedProductId);
         if (!deletedProduct) {
             throw new HttpError(400, "Product is not deleted!");
+        }
+
+        if (existingProductById.productImageUrls && (existingProductById.productImageUrls.length > 0)) {
+            await Promise.all(existingProductById.productImageUrls.map(imageUrl => processDeleteUpload(imageUrl)));
         }
 
         const response: ProductResponseDtoType = {
@@ -248,6 +258,84 @@ export class ProductService {
         const respose: AllProductsResponseDtoType = {
             success: true,
             message: "All products fetched successfully.",
+            status: 200,
+            data: products
+        };
+        return respose;
+    };
+
+    findAllProductsBySellerId = async (sellerId: string): Promise<AllProductsResponseDtoType> => {
+        const allProductsBySellerId = await this.productRepo.findAllProductsBySellerId(sellerId);
+        if (!allProductsBySellerId) {
+            throw new HttpError(404, "Products could not be fetched with seller id!");
+        }
+
+        const products = await Promise.all(
+            allProductsBySellerId.map(async (product) => {
+                return {
+                    _id: product._id.toString(),
+                    productName: product.productName,
+                    description: product.description,
+                    commission: product.commission,
+                    startPrice: product.startPrice,
+                    currentBidPrice: product.currentBidPrice,
+                    bidIntervalPrice: product.bidIntervalPrice,
+                    productImageUrls: product.productImageUrls,
+                    endDate: product.endDate,
+                    isVerified: product.isVerified,
+                    isSoldOut: product.isSoldOut,
+                    sellerId: product.sellerId.toString(),
+                    categoryId: product.categoryId.toString(),
+                    conditionId: product.conditionId.toString(),
+                    soldToBuyerId: product.soldToBuyerId?.toString(),
+                    createdAt: product.createdAt,
+                    updatedAt: product.updatedAt,
+                };
+            })
+        );
+
+        const respose: AllProductsResponseDtoType = {
+            success: true,
+            message: "All products with this seller id fetched successfully.",
+            status: 200,
+            data: products
+        };
+        return respose;
+    };
+
+    findAllProductsByBuyerId = async (buyerId: string): Promise<AllProductsResponseDtoType> => {
+        const allProductsByBuyerId = await this.productRepo.findAllProductsByBuyerId(buyerId);
+        if (!allProductsByBuyerId) {
+            throw new HttpError(404, "Products could not be fetched with buyer id!");
+        }
+
+        const products = await Promise.all(
+            allProductsByBuyerId.map(async (product) => {
+                return {
+                    _id: product._id.toString(),
+                    productName: product.productName,
+                    description: product.description,
+                    commission: product.commission,
+                    startPrice: product.startPrice,
+                    currentBidPrice: product.currentBidPrice,
+                    bidIntervalPrice: product.bidIntervalPrice,
+                    productImageUrls: product.productImageUrls,
+                    endDate: product.endDate,
+                    isVerified: product.isVerified,
+                    isSoldOut: product.isSoldOut,
+                    sellerId: product.sellerId.toString(),
+                    categoryId: product.categoryId.toString(),
+                    conditionId: product.conditionId.toString(),
+                    soldToBuyerId: product.soldToBuyerId?.toString(),
+                    createdAt: product.createdAt,
+                    updatedAt: product.updatedAt,
+                };
+            })
+        );
+
+        const respose: AllProductsResponseDtoType = {
+            success: true,
+            message: "All products with this buyer id fetched successfully.",
             status: 200,
             data: products
         };

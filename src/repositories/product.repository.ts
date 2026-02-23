@@ -38,6 +38,16 @@ export class ProductRepository implements ProductRepositoryInterface {
         return product;
     };
 
+    findAllProductsBySellerId = async (sellerId: string): Promise<ProductDocument[] | null> => {
+        const products = await ProductModel.find({ sellerId: sellerId }).lean();
+        return products;
+    };
+
+    findAllProductsByBuyerId = async (buyerId: string): Promise<ProductDocument[] | null> => {
+        const products = await ProductModel.find({ soldToBuyerId: buyerId }).lean();
+        return products;
+    };
+
     getAllProducts = async (): Promise<ProductDocument[] | null> => {
         const products = await ProductModel.find().lean();
         return products;

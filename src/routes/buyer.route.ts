@@ -38,7 +38,7 @@ router.get("/logout", buyerAuthMiddleware.protect, buyerAuthController.logoutBuy
 
 // Buyer Other CRUDs
 router.put("/update-profile-details/:id", buyerAuthMiddleware.protect, buyerController.updateBuyerProfileDetails);
-router.put("/upload-profile-picture/:id", buyerAuthMiddleware.protect, upload.single("profilePicture"), buyerController.uploadProfilePicture);
+router.put("/upload-profile-picture/:id", buyerAuthMiddleware.protect, upload.single("profile-picture-buyer"), buyerController.uploadProfilePicture);
 router.delete("/delete-account/:id", buyerAuthMiddleware.protect, buyerController.deleteBuyerAccount);
 router.get("/get-current-buyer/:id", buyerAuthMiddleware.protect, buyerController.getCurrentBuyer);
 

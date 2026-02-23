@@ -16,6 +16,7 @@ import adminRoute from "./routes/admin.route.ts";
 import categoryRoute from "./routes/category.route.ts";
 import productRoute from "./routes/product.route.ts";
 import productConditionRoute from "./routes/product-condition.route.ts";
+import bidRoute from "./routes/bid.route.ts";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -132,6 +133,9 @@ app.use("/api/product", productRoute);
 
 // ---------------------------- Product Condition Route -------------------------------
 app.use("/api/product-condition", productConditionRoute);
+
+// ---------------------------- Bid Route -------------------------------
+app.use("/api/bid", bidRoute);
 
 app.get("/", (req: Request, res: Response) => {
     res.send("Hello, World!");

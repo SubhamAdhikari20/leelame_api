@@ -140,9 +140,13 @@ export class SellerService {
 
         if (!updatedSeller || !updatedSeller.profilePictureUrl) {
             if (profilePicture) {
-                await processDeleteUpload(imageUrl!);
+                await processDeleteUpload(imageUrl);
             }
             throw new HttpError(404, "Seller is not found along with profile picture!");
+        }
+
+        if (existingSellerById.profilePictureUrl) {
+            await processDeleteUpload(existingSellerById.profilePictureUrl);
         }
 
         const response: UploadImageSellerResponseDtoType = {
@@ -162,9 +166,19 @@ export class SellerService {
         }
 
         const decodedSellerId = decodeURIComponent(sellerId);
+
+        const existingSellerById = await this.sellerRepo.findSellerById(sellerId);
+        if (!existingSellerById) {
+            throw new HttpError(404, "Seller with the seller id not found!");
+        }
+
         const deletedSeller = await this.sellerRepo.deleteSeller(decodedSellerId);
         if (!deletedSeller) {
             throw new HttpError(400, "Seller account not deleted!");
+        }
+
+        if (existingSellerById.profilePictureUrl) {
+            await processDeleteUpload(existingSellerById.profilePictureUrl);
         }
 
         const response: SellerResponseDtoType = {

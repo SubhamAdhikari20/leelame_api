@@ -1,21 +1,20 @@
-// src/controllers/product.controller.ts
+// src/controllers/bid.controller.ts
 import type { Request, Response } from "express";
-import { ProductResponseDto, CreateProductDto, UpdateProductDto } from "./../dtos/product.dto.ts";
-import { ProductService } from "./../services/product.service.ts";
+import { BidResponseDto, CreateBidDto, UpdateBidDto } from "./../dtos/bid.dto.ts";
+import { BidService } from "./../services/bid.service.ts";
 import { z } from "zod";
 import { HttpError } from "./../errors/http-error.ts";
 import asyncHandler from "./../middleware/async.middleware.ts";
-import { normalizeRemoveHttpUrl } from "./../helpers/http-url.helper.ts";
 
 
-export class ProductController {
-    private productService: ProductService;
+export class BidController {
+    private bidService: BidService;
 
-    constructor(productService: ProductService) {
-        this.productService = productService;
+    constructor(bidService: BidService) {
+        this.bidService = bidService;
     }
 
-    createProduct = asyncHandler(async (req: Request, res: Response) => {
+    createBid = asyncHandler(async (req: Request, res: Response) => {
         try {
             const tokenUserId = await req.user?._id;
             if (!tokenUserId || tokenUserId.toString() === "") {
@@ -26,22 +25,7 @@ export class ProductController {
             }
 
             const body = await req.body;
-            const rawData = body.productData;
-            let validatedData;
-            if (rawData) {
-                const parsedData = JSON.parse(rawData);
-                // console.log("rawData: ", rawData);
-                // console.log("parsedData: ", parsedData);
-
-                validatedData = CreateProductDto.safeParse(parsedData);
-                // console.log("validatedData: ", validatedData);
-            }
-            else {
-                // console.log("body: ", body);
-
-                validatedData = CreateProductDto.safeParse(body);
-                // console.log("validatedData: ", validatedData);
-            }
+            const validatedData = CreateBidDto.safeParse(body);
 
             if (!validatedData.success) {
                 return res.status(400).json({
@@ -50,34 +34,24 @@ export class ProductController {
                 });
             }
 
-            const productImages: Express.Multer.File[] | undefined = Array.isArray(req.files)
-                ? await req.files
-                : undefined;
-            const subFolder: string | undefined = await req.body.folder;
-            let result;
-            if (productImages && productImages.length > 0) {
-                result = await this.productService.createProduct(tokenUserId.toString(), validatedData.data, productImages, subFolder);
-            }
-            else {
-                result = await this.productService.createProduct(tokenUserId.toString(), validatedData.data);
-            }
+            const result = await this.bidService.createBid(validatedData.data);
 
-            const validatedResponseProductData = CreateProductDto.safeParse(result?.data);
-            if (!validatedResponseProductData.success) {
+            const validatedResponseBidData = CreateBidDto.safeParse(result?.data);
+            if (!validatedResponseBidData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseProductData.error)
+                    message: z.prettifyError(validatedResponseBidData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedResponseProductData.data,
+                data: validatedResponseBidData.data,
             });
         }
         catch (error: Error | any) {
-            console.log("Error in create product controller: ", error.message);
+            console.error("Error: ", error.message);
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
                     success: false,
@@ -92,13 +66,13 @@ export class ProductController {
         }
     });
 
-    updateProduct = asyncHandler(async (req: Request, res: Response) => {
+    updateBid = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const productId = await req.params.id;
-            if (!productId || productId.toString() === "") {
+            const bidId = await req.params.id;
+            if (!bidId || bidId.toString() === "") {
                 return res.status(400).json({
                     success: false,
-                    message: "Params Error! Product id is not sent through params."
+                    message: "Params Error! Bid id is not sent through params."
                 });
             }
 
@@ -111,22 +85,7 @@ export class ProductController {
             }
 
             const body = await req.body;
-            const rawData = body.productData;
-            let validatedData;
-            if (rawData) {
-                const parsedData = JSON.parse(rawData);
-                // console.log("rawData: ", rawData);
-                // console.log("parsedData: ", parsedData);
-
-                validatedData = UpdateProductDto.safeParse(parsedData);
-                // console.log("validatedData: ", validatedData);
-            }
-            else {
-                // console.log("body: ", body);
-
-                validatedData = UpdateProductDto.safeParse(body);
-                // console.log("validatedData: ", validatedData);
-            }
+            const validatedData = UpdateBidDto.safeParse(body);
 
             if (!validatedData.success) {
                 return res.status(400).json({
@@ -135,33 +94,19 @@ export class ProductController {
                 });
             }
 
-            const updateProductValidatedData = { ...validatedData.data, removedExisitingProductImageUrls: validatedData.data.removedExisitingProductImageUrls.map((removedExisitingProductImageUrl) => normalizeRemoveHttpUrl(removedExisitingProductImageUrl)).filter((url) => url !== null) as string[] };
-            // console.log("updateProductValidatedData: ", updateProductValidatedData);
-
-            const productImages: Express.Multer.File[] | undefined = Array.isArray(req.files)
-                ? await req.files
-                : undefined;
-            const subFolder: string | undefined = await req.body.folder;
-            let result;
-            if (productImages && productImages.length > 0) {
-                result = await this.productService.updateProduct(productId.toString(), updateProductValidatedData, productImages, subFolder);
-            }
-            else {
-                result = await this.productService.updateProduct(productId.toString(), updateProductValidatedData);
-            }
-
-            const validatedResponseProductData = ProductResponseDto.safeParse(result?.data);
-            if (!validatedResponseProductData.success) {
+            const result = await this.bidService.updateBid(bidId.toString(), validatedData.data);
+            const validatedResponseBidData = BidResponseDto.safeParse(result?.data);
+            if (!validatedResponseBidData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseProductData.error)
+                    message: z.prettifyError(validatedResponseBidData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedResponseProductData.data,
+                data: validatedResponseBidData.data,
             });
         }
         catch (error: Error | any) {
@@ -179,13 +124,13 @@ export class ProductController {
         }
     });
 
-    deleteProduct = asyncHandler(async (req: Request, res: Response) => {
+    deleteBid = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const productId = await req.params.id;
-            if (!productId || productId.toString() === "") {
+            const bidId = await req.params.id;
+            if (!bidId || bidId.toString() === "") {
                 return res.status(400).json({
                     success: false,
-                    message: "Params Error! Product id is not sent through params."
+                    message: "Params Error! Bid id is not sent through params."
                 });
             }
 
@@ -197,7 +142,7 @@ export class ProductController {
                 });
             }
 
-            const result = await this.productService.deleteProduct(productId.toString());
+            const result = await this.bidService.deleteBid(bidId.toString());
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
@@ -219,9 +164,91 @@ export class ProductController {
         }
     });
 
-    getProductById = asyncHandler(async (req: Request, res: Response) => {
+    getBidById = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const productId = await req.params.id;
+            const bidId = await req.params.id;
+            if (!bidId || bidId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Params Error! Bid id is not sent through params."
+                });
+            }
+
+            const tokenUserId = await req.user?._id;
+            if (!tokenUserId || tokenUserId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token Error! Token user id not found."
+                });
+            }
+
+            const result = await this.bidService.getBidById(bidId.toString());
+
+            const validatedResponseBidData = BidResponseDto.safeParse(result?.data);
+            if (!validatedResponseBidData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedResponseBidData.error)
+                });
+            }
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+                data: validatedResponseBidData.data,
+            });
+        }
+        catch (error: Error | any) {
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
+    getAllBids = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const result = await this.bidService.getAllBids();
+
+            const validatedBidsData = z.array(BidResponseDto).safeParse(result?.data);
+            if (!validatedBidsData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedBidsData.error)
+                });
+            }
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+                data: validatedBidsData.data,
+            });
+        }
+        catch (error: Error | any) {
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
+    findAllBidsByProductId = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const productId = await req.params.productId;
             if (!productId || productId.toString() === "") {
                 return res.status(400).json({
                     success: false,
@@ -229,28 +256,20 @@ export class ProductController {
                 });
             }
 
-            // const tokenUserId = await req.user?._id;
-            // if (!tokenUserId || tokenUserId.toString() === "") {
-            //     return res.status(400).json({
-            //         success: false,
-            //         message: "Token Error! Token user id not found."
-            //     });
-            // }
+            const result = await this.bidService.findAllBidsByProductId(productId.toString());
 
-            const result = await this.productService.getProductById(productId.toString());
-
-            const validatedResponseProductData = ProductResponseDto.safeParse(result?.data);
-            if (!validatedResponseProductData.success) {
+            const validatedBidsData = z.array(BidResponseDto).safeParse(result?.data);
+            if (!validatedBidsData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseProductData.error)
+                    message: z.prettifyError(validatedBidsData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedResponseProductData.data,
+                data: validatedBidsData.data,
             });
         }
         catch (error: Error | any) {
@@ -268,96 +287,7 @@ export class ProductController {
         }
     });
 
-    getAllProducts = asyncHandler(async (req: Request, res: Response) => {
-        try {
-            const result = await this.productService.getAllProducts();
-
-            const validatedProductsData = z.array(ProductResponseDto).safeParse(result?.data);
-            if (!validatedProductsData.success) {
-                return res.status(400).json({
-                    success: false,
-                    message: z.prettifyError(validatedProductsData.error)
-                });
-            }
-
-            return res.status(result?.status ?? 200).json({
-                success: result?.success,
-                message: result?.message,
-                data: validatedProductsData.data,
-            });
-        }
-        catch (error: Error | any) {
-            if (error instanceof HttpError) {
-                return res.status(error.status).json({
-                    success: false,
-                    message: error.message
-                });
-            }
-
-            return res.status(500).json({
-                success: false,
-                message: "Internal Server Error"
-            });
-        }
-    });
-
-    findAllProductsBySellerId = asyncHandler(async (req: Request, res: Response) => {
-        try {
-            const sellerId = await req.params.sellerId;
-            if (!sellerId || sellerId.toString() === "") {
-                return res.status(400).json({
-                    success: false,
-                    message: "Params Error! Seller id is not sent through params."
-                });
-            }
-
-            // const tokenUserId = await req.user?._id;
-            // if (!tokenUserId || tokenUserId.toString() === "") {
-            //     return res.status(400).json({
-            //         success: false,
-            //         message: "Token Error! Token user id not found."
-            //     });
-            // }
-
-            // if (sellerId.toString() !== tokenUserId.toString()) {
-            //     return res.status(400).json({
-            //         success: false,
-            //         message: "Params user id and token id mismatch!"
-            //     });
-            // }
-
-            const result = await this.productService.findAllProductsBySellerId(sellerId.toString());
-
-            const validatedProductsData = z.array(ProductResponseDto).safeParse(result?.data);
-            if (!validatedProductsData.success) {
-                return res.status(400).json({
-                    success: false,
-                    message: z.prettifyError(validatedProductsData.error)
-                });
-            }
-
-            return res.status(result?.status ?? 200).json({
-                success: result?.success,
-                message: result?.message,
-                data: validatedProductsData.data,
-            });
-        }
-        catch (error: Error | any) {
-            if (error instanceof HttpError) {
-                return res.status(error.status).json({
-                    success: false,
-                    message: error.message
-                });
-            }
-
-            return res.status(500).json({
-                success: false,
-                message: "Internal Server Error"
-            });
-        }
-    });
-
-    findAllProductsByBuyerId = asyncHandler(async (req: Request, res: Response) => {
+    findAllBidsByBuyerId = asyncHandler(async (req: Request, res: Response) => {
         try {
             const buyerId = await req.params.buyerId;
             if (!buyerId || buyerId.toString() === "") {
@@ -382,20 +312,76 @@ export class ProductController {
             //     });
             // }
 
-            const result = await this.productService.findAllProductsByBuyerId(buyerId.toString());
+            const result = await this.bidService.findAllBidsByBuyerId(buyerId.toString());
 
-            const validatedProductsData = z.array(ProductResponseDto).safeParse(result?.data);
-            if (!validatedProductsData.success) {
+            const validatedBidsData = z.array(BidResponseDto).safeParse(result?.data);
+            if (!validatedBidsData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedProductsData.error)
+                    message: z.prettifyError(validatedBidsData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedProductsData.data,
+                data: validatedBidsData.data,
+            });
+        }
+        catch (error: Error | any) {
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
+    findAllBidsBySellerId = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const sellerId = await req.params.sellerId;
+            if (!sellerId || sellerId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Params Error! Seller id is not sent through params."
+                });
+            }
+
+            // const tokenUserId = await req.user?._id;
+            // if (!tokenUserId || tokenUserId.toString() === "") {
+            //     return res.status(400).json({
+            //         success: false,
+            //         message: "Token Error! Token user id not found."
+            //     });
+            // }
+
+            // if (sellerId.toString() !== tokenUserId.toString()) {
+            //     return res.status(400).json({
+            //         success: false,
+            //         message: "Params user id and token id mismatch!"
+            //     });
+            // }
+
+            const result = await this.bidService.findAllBidsBySellerId(sellerId.toString());
+
+            const validatedBidsData = z.array(BidResponseDto).safeParse(result?.data);
+            if (!validatedBidsData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedBidsData.error)
+                });
+            }
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+                data: validatedBidsData.data,
             });
         }
         catch (error: Error | any) {

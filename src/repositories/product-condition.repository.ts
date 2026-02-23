@@ -1,6 +1,6 @@
 // src/repositories/product-condition.repository.ts
 import type { ProductConditionRepositoryInterface } from "./../interfaces/product-condition.repository.interface.ts";
-import type { ProductCondition, ProductConditionDocument } from "./../types/product-condition.type.ts";
+import type { ProductCondition, ProductConditionDocument } from "../types/product-condition.type.ts";
 import ProductConditionModel from "./../models/product-condition.model.ts";
 
 

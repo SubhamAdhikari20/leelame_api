@@ -9,5 +9,7 @@ export interface ProductRepositoryInterface {
     findProductById(id: string): Promise<ProductDocument | null>;
     findProductBySellerId(sellerId: string): Promise<ProductDocument | null>;
     findProductByBuyerId(buyerId: string): Promise<ProductDocument | null>;
+    findAllProductsBySellerId(sellerId: string): Promise<ProductDocument[] | null>;
+    findAllProductsByBuyerId(buyerId: string): Promise<ProductDocument[] | null>;
     getAllProducts(): Promise<ProductDocument[] | null>;
 }

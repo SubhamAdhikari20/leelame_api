@@ -62,10 +62,15 @@ export class BuyerAuthController {
 
     checkUsernameUnique = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const url = await req.url;
-            const { searchParams } = new URL(url);
+            // const url = await req.url;
+            // const { searchParams } = new URL(url);
+            // const queryParam = {
+            //     username: searchParams.get("username")
+            // };
+
+            const { username } = await req.query;
             const queryParam = {
-                username: searchParams.get("username")
+                username: username
             };
 
             if (!queryParam) {

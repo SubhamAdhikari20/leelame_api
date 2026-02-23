@@ -1,6 +1,6 @@
 // src/helpers/http-url.helper.ts
 
-// 
+
 export const normalizeRemoveHttpUrl = (url?: string | null) => {
     if (!url) {
         return null;

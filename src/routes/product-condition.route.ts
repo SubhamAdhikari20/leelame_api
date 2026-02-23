@@ -1,6 +1,6 @@
 // src/routes/product-condition.route.ts
 import express from "express";
-import { ProductConditionRepository } from "./../repositories/product-condition.interface.ts";
+import { ProductConditionRepository } from "./../repositories/product-condition.repository.ts";
 import { ProductConditionService } from "./../services/product-condition.service.ts";
 import { ProductConditionController } from "./../controllers/product-condition.controller.ts";
 import { UserRepository } from "./../repositories/user.repository.ts";

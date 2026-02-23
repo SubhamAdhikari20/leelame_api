@@ -166,16 +166,19 @@ export class BuyerService {
 
         const imageUrl = await processSingleUpload(profilePicture, "profile-pictures/buyers");
 
-
         const updatedBuyer = await this.buyerRepo.updateBuyer(existingBuyerById._id.toString(), {
             profilePictureUrl: imageUrl
         });
 
         if (!updatedBuyer || !updatedBuyer.profilePictureUrl) {
             if (profilePicture) {
-                await processDeleteUpload(imageUrl!);
+                await processDeleteUpload(imageUrl);
             }
             throw new HttpError(404, "Buyer is not found along with profile picture!");
+        }
+
+        if (existingBuyerById.profilePictureUrl) {
+            await processDeleteUpload(existingBuyerById.profilePictureUrl);
         }
 
         const response: UploadImageBuyerResponseDtoType = {
@@ -195,9 +198,19 @@ export class BuyerService {
         }
 
         const decodedBuyerId = decodeURIComponent(buyerId);
+
+        const existingBuyerById = await this.buyerRepo.findBuyerById(buyerId);
+        if (!existingBuyerById) {
+            throw new HttpError(404, "Buyer with the buyer id not found!");
+        }
+
         const deletedBuyer = await this.buyerRepo.deleteBuyer(decodedBuyerId);
         if (!deletedBuyer) {
             throw new HttpError(400, "Buyer account not deleted!");
+        }
+
+        if (existingBuyerById.profilePictureUrl) {
+            await processDeleteUpload(existingBuyerById.profilePictureUrl);
         }
 
         const response: BuyerResponseDtoType = {

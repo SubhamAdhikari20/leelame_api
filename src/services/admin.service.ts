@@ -146,9 +146,13 @@ export class AdminService {
 
         if (!updatedAdmin || !updatedAdmin.profilePictureUrl) {
             if (profilePicture) {
-                await processDeleteUpload(imageUrl!);
+                await processDeleteUpload(imageUrl);
             }
             throw new HttpError(404, "Admin is not found along with profile picture!");
+        }
+
+        if (existingAdminById.profilePictureUrl) {
+            await processDeleteUpload(existingAdminById.profilePictureUrl);
         }
 
         const response: UploadImageAdminResponseDtoType = {
@@ -168,9 +172,19 @@ export class AdminService {
         }
 
         const decodedAdminId = decodeURIComponent(adminId);
+
+        const existingAdminById = await this.adminRepo.findAdminById(adminId);
+        if (!existingAdminById) {
+            throw new HttpError(404, "Admin with the admin id not found!");
+        }
+
         const deletedAdmin = await this.adminRepo.deleteAdmin(decodedAdminId);
         if (!deletedAdmin) {
             throw new HttpError(400, "Admin account not deleted!");
+        }
+
+        if (existingAdminById.profilePictureUrl) {
+            await processDeleteUpload(existingAdminById.profilePictureUrl);
         }
 
         const response: AdminResponseDtoType = {
@@ -516,20 +530,24 @@ export class AdminService {
             throw new HttpError(400, "Only image files are allowed!");
         }
 
-        const existingSeller = await this.sellerRepo.findSellerById(sellerId);
-        if (!existingSeller) {
+        const existingSellerBySellerId = await this.sellerRepo.findSellerById(sellerId);
+        if (!existingSellerBySellerId) {
             throw new HttpError(404, "Seller with the seller id not found!");
         }
 
         const imageUrl = await processSingleUpload(profilePicture, imageSubFolder || "profile-pictures/sellers");
 
-        const updatedSeller = await this.sellerRepo.updateSeller(existingSeller._id.toString(), {
+        const updatedSeller = await this.sellerRepo.updateSeller(existingSellerBySellerId._id.toString(), {
             profilePictureUrl: imageUrl
         });
 
         if (!updatedSeller || !updatedSeller.profilePictureUrl) {
-            await processDeleteUpload(imageUrl!);
+            await processDeleteUpload(imageUrl);
             throw new HttpError(404, "Seller is not found along with profile picture!");
+        }
+
+        if (existingSellerBySellerId.profilePictureUrl) {
+            await processDeleteUpload(existingSellerBySellerId.profilePictureUrl);
         }
 
         const response: UploadImageAdminResponseDtoType = {
@@ -549,9 +567,19 @@ export class AdminService {
         }
 
         const decodedSellerId = decodeURIComponent(sellerId);
+
+        const existingSellerBySellerId = await this.sellerRepo.findSellerById(sellerId);
+        if (!existingSellerBySellerId) {
+            throw new HttpError(404, "Seller with the seller id not found!");
+        }
+
         const deletedSeller = await this.sellerRepo.deleteSeller(decodedSellerId);
         if (!deletedSeller) {
             throw new HttpError(400, "Seller account could not deleted!");
+        }
+
+        if (existingSellerBySellerId.profilePictureUrl) {
+            await processDeleteUpload(existingSellerBySellerId.profilePictureUrl);
         }
 
         const response: AdminResponseDtoType = {
