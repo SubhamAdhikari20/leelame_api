@@ -301,6 +301,39 @@ export class ProductController {
         }
     });
 
+    getAllVerifiedProducts = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const result = await this.productService.getAllVerifiedProducts();
+
+            const validatedProductsData = z.array(ProductResponseDto).safeParse(result?.data);
+            if (!validatedProductsData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedProductsData.error)
+                });
+            }
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+                data: validatedProductsData.data,
+            });
+        }
+        catch (error: Error | any) {
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
     findAllProductsBySellerId = asyncHandler(async (req: Request, res: Response) => {
         try {
             const sellerId = await req.params.sellerId;
@@ -396,6 +429,55 @@ export class ProductController {
                 success: result?.success,
                 message: result?.message,
                 data: validatedProductsData.data,
+            });
+        }
+        catch (error: Error | any) {
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
+    verifyProductByAdmin = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const productId = await req.params.id;
+            if (!productId || productId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Params Error! Product id is not sent through params."
+                });
+            }
+
+            const tokenUserId = await req.user?._id;
+            if (!tokenUserId || tokenUserId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token Error! Token user id not found."
+                });
+            }
+
+            const result = await this.productService.verifyProductByAdmin(productId.toString());
+
+            const validatedResponseProductData = ProductResponseDto.safeParse(result?.data);
+            if (!validatedResponseProductData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedResponseProductData.error)
+                });
+            }
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+                data: validatedResponseProductData.data,
             });
         }
         catch (error: Error | any) {

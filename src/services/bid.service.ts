@@ -30,6 +30,14 @@ export class BidService {
             );
         }
 
+        const endDate = new Date(exisitingProductById.endDate).getTime();
+        const now = new Date().getTime();
+        const difference = endDate - now;
+
+        if (difference <= 0) {
+            throw new HttpError(400, "Auction has already ended for this product!");
+        }
+
         const newBid = await this.bidRepo.createBid({
             productId: productId,
             buyerId: buyerId,
@@ -82,6 +90,14 @@ export class BidService {
                 400,
                 `Your bid must be greater than or equal to the sum of current bid and bid interval price (Rs.${minRequiredBidAmount.toFixed(2)})`
             );
+        }
+
+        const endDate = new Date(exisitingProductById.endDate).getTime();
+        const now = new Date().getTime();
+        const difference = endDate - now;
+
+        if (difference <= 0) {
+            throw new HttpError(400, "Auction has already ended for this product!");
         }
 
         const updateBid = await this.bidRepo.updateBid(existingBidById._id.toString(), {

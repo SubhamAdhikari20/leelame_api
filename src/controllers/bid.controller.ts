@@ -51,7 +51,6 @@ export class BidController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error: ", error.message);
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
                     success: false,

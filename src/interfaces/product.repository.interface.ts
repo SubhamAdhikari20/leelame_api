@@ -12,4 +12,6 @@ export interface ProductRepositoryInterface {
     findAllProductsBySellerId(sellerId: string): Promise<ProductDocument[] | null>;
     findAllProductsByBuyerId(buyerId: string): Promise<ProductDocument[] | null>;
     getAllProducts(): Promise<ProductDocument[] | null>;
+    getAllVerifiedProducts(): Promise<ProductDocument[] | null>;
+    verifyProductByAdmin(id: string): Promise<ProductDocument | null>;
 }

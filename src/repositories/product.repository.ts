@@ -44,12 +44,22 @@ export class ProductRepository implements ProductRepositoryInterface {
     };
 
     findAllProductsByBuyerId = async (buyerId: string): Promise<ProductDocument[] | null> => {
-        const products = await ProductModel.find({ soldToBuyerId: buyerId }).lean();
+        const products = await ProductModel.find({ soldToBuyerId: buyerId, isVerified: true }).lean();
         return products;
     };
 
     getAllProducts = async (): Promise<ProductDocument[] | null> => {
         const products = await ProductModel.find().lean();
         return products;
+    };
+
+    getAllVerifiedProducts = async (): Promise<ProductDocument[] | null> => {
+        const verifiedProducts = await ProductModel.find({ isVerified: true }).lean();
+        return verifiedProducts;
+    };
+
+    verifyProductByAdmin = async (id: string): Promise<ProductDocument | null> => {
+        const verifiedProduct = await ProductModel.findByIdAndUpdate(id, { isVerified: true }, { new: true }).lean();
+        return verifiedProduct;
     };
 }

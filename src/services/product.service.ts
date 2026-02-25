@@ -55,7 +55,7 @@ export class ProductService {
             throw new HttpError(400, "Product is not created!");
         }
 
-        const respose: ProductResponseDtoType = {
+        const response: ProductResponseDtoType = {
             success: true,
             message: "Product created successfully.",
             status: 201,
@@ -79,7 +79,7 @@ export class ProductService {
                 updatedAt: newProduct.updatedAt,
             }
         };
-        return respose;
+        return response;
     };
 
     updateProduct = async (productId: string, updateProductData: UpdateProductDtoType, productImages?: Express.Multer.File[], imageSubFolder?: string): Promise<ProductResponseDtoType> => {
@@ -139,7 +139,7 @@ export class ProductService {
             throw new HttpError(400, "Product is not updated!");
         }
 
-        const respose: ProductResponseDtoType = {
+        const response: ProductResponseDtoType = {
             success: true,
             message: "Product updated successfully.",
             status: 200,
@@ -163,7 +163,7 @@ export class ProductService {
                 updatedAt: updatedProduct.updatedAt,
             }
         };
-        return respose;
+        return response;
     };
 
     deleteProduct = async (productId: string): Promise<ProductResponseDtoType> => {
@@ -255,13 +255,52 @@ export class ProductService {
             })
         );
 
-        const respose: AllProductsResponseDtoType = {
+        const response: AllProductsResponseDtoType = {
             success: true,
             message: "All products fetched successfully.",
             status: 200,
             data: products
         };
-        return respose;
+        return response;
+    };
+
+    getAllVerifiedProducts = async (): Promise<AllProductsResponseDtoType> => {
+        const allVerifiedProducts = await this.productRepo.getAllVerifiedProducts();
+        if (!allVerifiedProducts) {
+            throw new HttpError(404, "Verified products could not be fetched!");
+        }
+
+        const products = await Promise.all(
+            allVerifiedProducts.map(async (product) => {
+                return {
+                    _id: product._id.toString(),
+                    productName: product.productName,
+                    description: product.description,
+                    commission: product.commission,
+                    startPrice: product.startPrice,
+                    currentBidPrice: product.currentBidPrice,
+                    bidIntervalPrice: product.bidIntervalPrice,
+                    productImageUrls: product.productImageUrls,
+                    endDate: product.endDate,
+                    isVerified: product.isVerified,
+                    isSoldOut: product.isSoldOut,
+                    sellerId: product.sellerId.toString(),
+                    categoryId: product.categoryId.toString(),
+                    conditionId: product.conditionId.toString(),
+                    soldToBuyerId: product.soldToBuyerId?.toString(),
+                    createdAt: product.createdAt,
+                    updatedAt: product.updatedAt,
+                };
+            })
+        );
+
+        const response: AllProductsResponseDtoType = {
+            success: true,
+            message: "All verified products fetched successfully.",
+            status: 200,
+            data: products
+        };
+        return response;
     };
 
     findAllProductsBySellerId = async (sellerId: string): Promise<AllProductsResponseDtoType> => {
@@ -294,13 +333,13 @@ export class ProductService {
             })
         );
 
-        const respose: AllProductsResponseDtoType = {
+        const response: AllProductsResponseDtoType = {
             success: true,
             message: "All products with this seller id fetched successfully.",
             status: 200,
             data: products
         };
-        return respose;
+        return response;
     };
 
     findAllProductsByBuyerId = async (buyerId: string): Promise<AllProductsResponseDtoType> => {
@@ -333,12 +372,51 @@ export class ProductService {
             })
         );
 
-        const respose: AllProductsResponseDtoType = {
+        const response: AllProductsResponseDtoType = {
             success: true,
             message: "All products with this buyer id fetched successfully.",
             status: 200,
             data: products
         };
-        return respose;
+        return response;
+    };
+
+    verifyProductByAdmin = async (productId: string): Promise<ProductResponseDtoType> => {
+        const decodedProductId = decodeURIComponent(productId);
+        const existingProductById = await this.productRepo.findProductById(decodedProductId);
+        if (!existingProductById) {
+            throw new HttpError(404, "Product with this id not found!");
+        }
+
+        const verifiedProduct = await this.productRepo.verifyProductByAdmin(decodedProductId);
+        if (!verifiedProduct) {
+            throw new HttpError(400, "Product is not verified!");
+        }
+
+        const response: ProductResponseDtoType = {
+            success: true,
+            message: "Product verified successfully.",
+            status: 200,
+            data: {
+                _id: verifiedProduct._id.toString(),
+                productName: verifiedProduct.productName,
+                description: verifiedProduct.description,
+                commission: verifiedProduct.commission,
+                startPrice: verifiedProduct.startPrice,
+                currentBidPrice: verifiedProduct.currentBidPrice,
+                bidIntervalPrice: verifiedProduct.bidIntervalPrice,
+                productImageUrls: verifiedProduct.productImageUrls,
+                endDate: verifiedProduct.endDate,
+                isVerified: verifiedProduct.isVerified,
+                isSoldOut: verifiedProduct.isSoldOut,
+                sellerId: verifiedProduct.sellerId.toString(),
+                categoryId: verifiedProduct.categoryId.toString(),
+                conditionId: verifiedProduct.conditionId.toString(),
+                soldToBuyerId: verifiedProduct.soldToBuyerId?.toString(),
+                createdAt: verifiedProduct.createdAt,
+                updatedAt: verifiedProduct.updatedAt,
+            }
+        };
+        return response;
     };
 }

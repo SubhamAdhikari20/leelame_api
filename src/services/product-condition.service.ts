@@ -52,6 +52,14 @@ export class ProductConditionService {
             throw new HttpError(404, "Product condition with the productCondition id not found!");
         }
 
+        const existingProductConditionByProductConditionName = await this.productConditionRepo.findProductConditionByProductConditionName(productConditionName);
+        if (
+            existingProductConditionByProductConditionName &&
+            existingProductConditionByProductConditionName._id.toString() !== decodedProductConditionId
+        ) {
+            throw new HttpError(409, "Product condition already exists!");
+        }
+
         const updateProductCondition = await this.productConditionRepo.updateProductCondition(existingProductConditionById._id.toString(), {
             productConditionName: productConditionName,
             description: description,

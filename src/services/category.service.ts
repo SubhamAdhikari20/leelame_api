@@ -52,6 +52,14 @@ export class CategoryService {
             throw new HttpError(404, "Category with the category id not found!");
         }
 
+        const existingCategoryByCategoryName = await this.categoryRepo.findCategoryByCategoryName(categoryName);
+        if (
+            existingCategoryByCategoryName &&
+            existingCategoryByCategoryName._id.toString() !== decodedCategoryId
+        ) {
+            throw new HttpError(409, "Category already exists!");
+        }
+
         const updateCategory = await this.categoryRepo.updateCategory(existingCategoryById._id.toString(), {
             categoryName: categoryName,
             description: description,
