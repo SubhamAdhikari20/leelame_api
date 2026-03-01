@@ -1,5 +1,5 @@
 // src/interfaces/product.repository.interface.ts
-import type { ProductDocument, Product } from "./../types/product.type.ts";
+import type { ProductDocument, Product, VerifyAndSetCommissionForProductByAdmin } from "./../types/product.type.ts";
 
 
 export interface ProductRepositoryInterface {
@@ -13,5 +13,6 @@ export interface ProductRepositoryInterface {
     findAllProductsByBuyerId(buyerId: string): Promise<ProductDocument[] | null>;
     getAllProducts(): Promise<ProductDocument[] | null>;
     getAllVerifiedProducts(): Promise<ProductDocument[] | null>;
-    verifyProductByAdmin(id: string): Promise<ProductDocument | null>;
+    verifyAndSetCommissionForProductByAdmin(id: string, data: Partial<VerifyAndSetCommissionForProductByAdmin>): Promise<ProductDocument | null>;
+    // verifyProductByAdmin(id: string): Promise<ProductDocument | null>;
 }

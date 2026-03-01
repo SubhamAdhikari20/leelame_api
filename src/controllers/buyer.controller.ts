@@ -98,6 +98,7 @@ export class BuyerController {
             }
 
             const body = await req.body;
+            console.log("Received body for updating buyer profile details: ", body);
             const validatedData = UpdateBuyerProfileDetailsDto.safeParse(body);
 
             if (!validatedData.success) {
@@ -165,6 +166,7 @@ export class BuyerController {
             }
 
             const profilePicture = await req.file;
+            const subFolder = await req.body.folder;
             if (!profilePicture) {
                 return res.status(400).json({
                     success: false,
@@ -172,7 +174,7 @@ export class BuyerController {
                 });
             }
 
-            const result = await this.buyerService.uploadProfilePicture(buyerId.toString(), profilePicture);
+            const result = await this.buyerService.uploadProfilePicture(buyerId.toString(), profilePicture, subFolder);
             const validatedResponseBuyerData = UploadImageBuyerResponseDto.safeParse(result?.data);
             if (!validatedResponseBuyerData.success) {
                 return res.status(400).json({
@@ -184,7 +186,7 @@ export class BuyerController {
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                user: validatedResponseBuyerData.data,
+                data: validatedResponseBuyerData.data,
             });
         }
         catch (error: Error | any) {
@@ -263,7 +265,7 @@ export class BuyerController {
                 });
             }
 
-            const result = await this.buyerService.getCurrentBuyerUser(buyerId.toString());
+            const result = await this.buyerService.getBuyerById(buyerId.toString());
 
             const validatedResponseBuyerData = BuyerResponseDto.safeParse(result?.user);
             if (!validatedResponseBuyerData.success) {
@@ -282,6 +284,39 @@ export class BuyerController {
         catch (error: Error | any) {
             console.error("Error in fetching buyer data controller:", error);
 
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
+    getAllBuyers = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const result = await this.buyerService.getAllBuyers();
+
+            const validatedBuyersData = z.array(BuyerResponseDto).safeParse(result?.users);
+            if (!validatedBuyersData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedBuyersData.error)
+                });
+            }
+
+            return res.status(result?.status ?? 200).json({
+                success: result?.success,
+                message: result?.message,
+                users: validatedBuyersData.data,
+            });
+        }
+        catch (error: Error | any) {
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
                     success: false,

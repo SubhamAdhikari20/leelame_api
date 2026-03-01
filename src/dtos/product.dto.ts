@@ -1,6 +1,6 @@
 // src/dtos/product.dto.ts
 import { z } from "zod";
-import { productNameValidation, productDescriptionValidation, productStartPriceValidation, productBidIntervalPriceValidation } from "./../schemas/product.schema.ts";
+import { productNameValidation, productDescriptionValidation, productStartPriceValidation, productBidIntervalPriceValidation, productCommissionValidation } from "./../schemas/product.schema.ts";
 
 
 // Create Product DTO
@@ -27,6 +27,13 @@ export const UpdateProductDto = z.object({
     conditionId: z.string()
 });
 export type UpdateProductDtoType = z.infer<typeof UpdateProductDto>;
+
+// Verify And Set Commission For Product By Admin DTO
+export const VerifyAndSetCommissionForProductByAdminDto = z.object({
+    commission: productCommissionValidation,
+    isVerified: z.boolean(),
+});
+export type VerifyAndSetCommissionForProductByAdminDtoType = z.infer<typeof VerifyAndSetCommissionForProductByAdminDto>;
 
 
 // Product Response Dto

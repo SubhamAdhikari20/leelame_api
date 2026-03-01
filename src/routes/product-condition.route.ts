@@ -24,6 +24,7 @@ router.delete("/delete-product-condition/:id", adminAuthMiddleware.protect, prod
 router.get("/get-all-product-conditions", productConditionController.getAllProductConditions);
 
 // Get Product Condition By ID Dynamic Route
-router.get("/:id", adminAuthMiddleware.protect, productConditionController.getProductConditionById);
+router.get("/:id", productConditionController.getProductConditionById);
+// router.get("/:id", adminAuthMiddleware.protect, productConditionController.getProductConditionById);
 
 export default router;

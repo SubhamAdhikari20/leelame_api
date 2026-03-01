@@ -1,5 +1,5 @@
 // src/services/product.service.ts
-import type { ProductResponseDtoType, CreateProductDtoType, UpdateProductDtoType, AllProductsResponseDtoType } from "./../dtos/product.dto.ts";
+import type { ProductResponseDtoType, CreateProductDtoType, UpdateProductDtoType, AllProductsResponseDtoType, VerifyAndSetCommissionForProductByAdminDtoType } from "./../dtos/product.dto.ts";
 import type { ProductRepositoryInterface } from "./../interfaces/product.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
 import { processDeleteUpload, processMultipleUploads } from "./../utils/upload-media.util.ts";
@@ -200,7 +200,7 @@ export class ProductService {
 
         const response: ProductResponseDtoType = {
             success: true,
-            message: "Product profile details updated successfully.",
+            message: "Product profile details fetched successfully.",
             status: 200,
             data: {
                 _id: existingProductById._id.toString(),
@@ -381,40 +381,41 @@ export class ProductService {
         return response;
     };
 
-    verifyProductByAdmin = async (productId: string): Promise<ProductResponseDtoType> => {
+    verifyAndSetCommissionForProductByAdmin = async (productId: string, updateProductData: VerifyAndSetCommissionForProductByAdminDtoType): Promise<ProductResponseDtoType> => {
         const decodedProductId = decodeURIComponent(productId);
+        console.log("Decoded Product ID in Service: ", decodedProductId);
         const existingProductById = await this.productRepo.findProductById(decodedProductId);
         if (!existingProductById) {
             throw new HttpError(404, "Product with this id not found!");
         }
 
-        const verifiedProduct = await this.productRepo.verifyProductByAdmin(decodedProductId);
-        if (!verifiedProduct) {
-            throw new HttpError(400, "Product is not verified!");
+        const verifyAndSetCommissionForProduct = await this.productRepo.verifyAndSetCommissionForProductByAdmin(decodedProductId, updateProductData);
+        if (!verifyAndSetCommissionForProduct) {
+            throw new HttpError(400, "Product is not updated with verified or commission details!");
         }
 
         const response: ProductResponseDtoType = {
             success: true,
-            message: "Product verified successfully.",
+            message: "Product is updated with verified or commission details successfully.",
             status: 200,
             data: {
-                _id: verifiedProduct._id.toString(),
-                productName: verifiedProduct.productName,
-                description: verifiedProduct.description,
-                commission: verifiedProduct.commission,
-                startPrice: verifiedProduct.startPrice,
-                currentBidPrice: verifiedProduct.currentBidPrice,
-                bidIntervalPrice: verifiedProduct.bidIntervalPrice,
-                productImageUrls: verifiedProduct.productImageUrls,
-                endDate: verifiedProduct.endDate,
-                isVerified: verifiedProduct.isVerified,
-                isSoldOut: verifiedProduct.isSoldOut,
-                sellerId: verifiedProduct.sellerId.toString(),
-                categoryId: verifiedProduct.categoryId.toString(),
-                conditionId: verifiedProduct.conditionId.toString(),
-                soldToBuyerId: verifiedProduct.soldToBuyerId?.toString(),
-                createdAt: verifiedProduct.createdAt,
-                updatedAt: verifiedProduct.updatedAt,
+                _id: verifyAndSetCommissionForProduct._id.toString(),
+                productName: verifyAndSetCommissionForProduct.productName,
+                description: verifyAndSetCommissionForProduct.description,
+                commission: verifyAndSetCommissionForProduct.commission,
+                startPrice: verifyAndSetCommissionForProduct.startPrice,
+                currentBidPrice: verifyAndSetCommissionForProduct.currentBidPrice,
+                bidIntervalPrice: verifyAndSetCommissionForProduct.bidIntervalPrice,
+                productImageUrls: verifyAndSetCommissionForProduct.productImageUrls,
+                endDate: verifyAndSetCommissionForProduct.endDate,
+                isVerified: verifyAndSetCommissionForProduct.isVerified,
+                isSoldOut: verifyAndSetCommissionForProduct.isSoldOut,
+                sellerId: verifyAndSetCommissionForProduct.sellerId.toString(),
+                categoryId: verifyAndSetCommissionForProduct.categoryId.toString(),
+                conditionId: verifyAndSetCommissionForProduct.conditionId.toString(),
+                soldToBuyerId: verifyAndSetCommissionForProduct.soldToBuyerId?.toString(),
+                createdAt: verifyAndSetCommissionForProduct.createdAt,
+                updatedAt: verifyAndSetCommissionForProduct.updatedAt,
             }
         };
         return response;

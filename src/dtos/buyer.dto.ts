@@ -1,6 +1,6 @@
 // src/dtos/buyer.dto.ts
 import { z } from "zod";
-import { fullNameValidation, usernameValidation, contactValidation, emailValidation, passwordValidation, roleValidation, otpValidation, termsAndConditionsValidation } from "./../schemas/user.schema.ts";
+import { fullNameValidation, usernameValidation, contactValidation, emailValidation, passwordValidation, roleValidation, otpValidation, termsAndConditionsValidation, bioValidation } from "./../schemas/user.schema.ts";
 
 
 // --------------------------- Buyer Authentication DTOs ----------------------------
@@ -93,7 +93,7 @@ export const UpdateBuyerProfileDetailsDto = z.object({
     email: emailValidation,
     username: usernameValidation,
     contact: contactValidation,
-    bio: z.string().max(500)
+    bio: bioValidation,
 });
 export type UpdateBuyerProfileDetailsDtoType = z.infer<typeof UpdateBuyerProfileDetailsDto>;
 
@@ -142,6 +142,14 @@ export type BuyerResponseDtoType = {
     status?: number | null;
     token?: string | null;
     user?: z.infer<typeof BuyerResponseDto> | null;
+};
+
+// All the buyers response
+export type AllBuyersResponseDtoType = {
+    success: boolean;
+    message: string;
+    status?: number | null;
+    users?: z.infer<typeof BuyerResponseDto>[] | null;
 };
 
 export const UploadImageBuyerResponseDto = z.object({

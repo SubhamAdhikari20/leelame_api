@@ -29,7 +29,7 @@ router.get("/get-all-products", productController.getAllProducts);
 router.get("/get-all-verified-products", productController.getAllVerifiedProducts);
 router.get("/get-all-products/:sellerId", productController.findAllProductsBySellerId);
 router.get("/get-all-verified-products/:buyerId", productController.findAllProductsByBuyerId);
-router.post("/verify-product-by-admin/:id", adminAuthMiddleware.protect, productController.verifyProductByAdmin);
+router.put("/update-product-by-admin/:id", adminAuthMiddleware.protect, productController.verifyAndSetCommissionForProductByAdmin);
 
 // Get Product By ID Dynamic Route
 router.get("/:id", productController.getProductById);

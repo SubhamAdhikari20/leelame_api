@@ -264,7 +264,7 @@ export class SellerController {
                 });
             }
 
-            const result = await this.sellerService.getCurrentSellerUser(sellerId.toString());
+            const result = await this.sellerService.getSellerById(sellerId.toString());
 
             const validatedResponseSellerData = SellerResponseDto.safeParse(result?.user);
             if (!validatedResponseSellerData.success) {
@@ -316,8 +316,6 @@ export class SellerController {
             });
         }
         catch (error: Error | any) {
-            console.error("Error in deleting seller account controller:", error);
-
             if (error instanceof HttpError) {
                 return res.status(error.status).json({
                     success: false,

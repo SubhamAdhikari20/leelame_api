@@ -24,6 +24,7 @@ router.delete("/delete-category/:id", adminAuthMiddleware.protect, categoryContr
 router.get("/get-all-categories", categoryController.getAllCategories);
 
 // Get Category By ID Dynamic Route
-router.get("/:id", adminAuthMiddleware.protect, categoryController.getCategoryById);
+router.get("/:id", categoryController.getCategoryById);
+// router.get("/:id", adminAuthMiddleware.protect, categoryController.getCategoryById);
 
 export default router;

@@ -36,7 +36,42 @@ export class SellerService {
 
         const response: SellerResponseDtoType = {
             success: true,
-            message: "Seller profile details updated successfully.",
+            message: "Current seller profile details fetched successfully.",
+            status: 200,
+            user: {
+                _id: existingSellerById._id.toString(),
+                baseUserId: existingSellerById.baseUserId.toString() || exisitingBaseUserByBaseUserId._id.toString(),
+                email: exisitingBaseUserByBaseUserId.email,
+                fullName: existingSellerById.fullName,
+                contact: existingSellerById.contact,
+                role: exisitingBaseUserByBaseUserId.role,
+                isVerified: exisitingBaseUserByBaseUserId.isVerified,
+                profilePictureUrl: existingSellerById.profilePictureUrl,
+                isPermanentlyBanned: exisitingBaseUserByBaseUserId.isPermanentlyBanned,
+            }
+        };
+        return response;
+    };
+
+    getSellerById = async (sellerId: string): Promise<SellerResponseDtoType> => {
+        if (!sellerId || sellerId.trim() === "") {
+            throw new HttpError(400, "Seller id is required!");
+        }
+
+        const decodedSellerId = decodeURIComponent(sellerId);
+        const existingSellerById = await this.sellerRepo.findSellerById(decodedSellerId);
+        if (!existingSellerById) {
+            throw new HttpError(404, "Seller with this id not found!");
+        }
+
+        const exisitingBaseUserByBaseUserId = await this.userRepo.findUserById(existingSellerById.baseUserId.toString());
+        if (!exisitingBaseUserByBaseUserId) {
+            throw new HttpError(404, "Base user with this user id not found!");
+        }
+
+        const response: SellerResponseDtoType = {
+            success: true,
+            message: "Seller profile details with this id fetched successfully.",
             status: 200,
             user: {
                 _id: existingSellerById._id.toString(),
@@ -222,13 +257,13 @@ export class SellerService {
             })
         );
 
-        const respose: AllSellersResponseDtoType = {
+        const response: AllSellersResponseDtoType = {
             success: true,
             message: "All sellers fetched successfully.",
             status: 200,
             users: users
         };
-        return respose;
+        return response;
     };
 
     getSellerByEmail = async (email: string): Promise<SellerResponseDtoType | null> => {

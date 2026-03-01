@@ -1,5 +1,5 @@
 // src/services/buyer.service.ts
-import type { BuyerResponseDtoType, UpdateBuyerProfileDetailsDtoType, UploadImageBuyerResponseDtoType } from "./../dtos/buyer.dto.ts";
+import type { AllBuyersResponseDtoType, BuyerResponseDtoType, UpdateBuyerProfileDetailsDtoType, UploadImageBuyerResponseDtoType } from "./../dtos/buyer.dto.ts";
 import type { BuyerRepositoryInterface } from "./../interfaces/buyer.repository.interface.ts";
 import type { UserRepositoryInterface } from "./../interfaces/user.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
@@ -36,7 +36,7 @@ export class BuyerService {
 
         const response: BuyerResponseDtoType = {
             success: true,
-            message: "Buyer profile details updated successfully.",
+            message: "Current buyer profile details fetched successfully.",
             status: 200,
             user: {
                 _id: existingBuyerById._id.toString(),
@@ -54,6 +54,44 @@ export class BuyerService {
         };
         return response;
     };
+
+    getBuyerById = async (buyerId: string): Promise<BuyerResponseDtoType> => {
+        if (!buyerId || buyerId.trim() === "") {
+            throw new HttpError(400, "Buyer id is required!");
+        }
+
+        const decodedBuyerId = decodeURIComponent(buyerId);
+        const existingBuyerById = await this.buyerRepo.findBuyerById(decodedBuyerId);
+        if (!existingBuyerById) {
+            throw new HttpError(404, "Buyer with this id not found!");
+        }
+
+        const exisitingBaseUserByBaseUserId = await this.userRepo.findUserById(existingBuyerById.baseUserId.toString());
+        if (!exisitingBaseUserByBaseUserId) {
+            throw new HttpError(404, "Base user with this user id not found!");
+        }
+
+        const response: BuyerResponseDtoType = {
+            success: true,
+            message: "Buyer profile details with this id fetched successfully.",
+            status: 200,
+            user: {
+                _id: existingBuyerById._id.toString(),
+                email: exisitingBaseUserByBaseUserId.email,
+                role: exisitingBaseUserByBaseUserId.role,
+                isVerified: exisitingBaseUserByBaseUserId.isVerified,
+                baseUserId: existingBuyerById.baseUserId.toString() || exisitingBaseUserByBaseUserId._id.toString(),
+                fullName: existingBuyerById.fullName,
+                username: existingBuyerById.username,
+                contact: existingBuyerById.contact,
+                profilePictureUrl: existingBuyerById.profilePictureUrl,
+                bio: existingBuyerById.bio,
+                isPermanentlyBanned: exisitingBaseUserByBaseUserId.isPermanentlyBanned,
+            }
+        };
+        return response;
+    };
+
 
     updateBuyerProfileDetails = async (buyerId: string, updateBuyerProfileDetailsDto: UpdateBuyerProfileDetailsDtoType): Promise<BuyerResponseDtoType> => {
         const { fullName, username, contact, email, bio } = updateBuyerProfileDetailsDto;
@@ -144,13 +182,14 @@ export class BuyerService {
                 role: updateBaseUser.role,
                 isVerified: updateBaseUser.isVerified,
                 profilePictureUrl: updatedBuyer.profilePictureUrl,
+                bio: updatedBuyer.bio,
                 isPermanentlyBanned: updateBaseUser.isPermanentlyBanned,
             }
         };
         return response;
     };
 
-    uploadProfilePicture = async (userId: string, profilePicture: Express.Multer.File): Promise<UploadImageBuyerResponseDtoType> => {
+    uploadProfilePicture = async (userId: string, profilePicture: Express.Multer.File, imageSubFolder?: string): Promise<UploadImageBuyerResponseDtoType> => {
         if (!profilePicture) {
             throw new HttpError(400, "No file provided! Upload a file.");
         }
@@ -164,7 +203,7 @@ export class BuyerService {
             throw new HttpError(404, "Buyer with the buyer id not found!");
         }
 
-        const imageUrl = await processSingleUpload(profilePicture, "profile-pictures/buyers");
+        const imageUrl = await processSingleUpload(profilePicture, imageSubFolder || "profile-pictures/buyers");
 
         const updatedBuyer = await this.buyerRepo.updateBuyer(existingBuyerById._id.toString(), {
             profilePictureUrl: imageUrl
@@ -220,6 +259,49 @@ export class BuyerService {
         };
         return response;
     }
+
+    getAllBuyers = async (): Promise<AllBuyersResponseDtoType | null> => {
+        const buyers = await this.buyerRepo.getAllBuyers();
+        if (!buyers) {
+            throw new HttpError(404, "Buyers could not be fetched!");
+        }
+
+        const users = await Promise.all(
+            buyers.map(async (buyer) => {
+                const baseUser = buyer.baseUserId
+                    ? await this.userRepo.findUserById(buyer.baseUserId.toString())
+                    : null;
+
+                if (!baseUser) {
+                    throw new HttpError(404, `Base user not found for buyer ID: ${buyer._id.toString()}`);
+                }
+
+                return {
+                    _id: buyer._id.toString(),
+                    email: baseUser.email,
+                    role: baseUser.role,
+                    isVerified: Boolean(baseUser.isVerified),
+                    baseUserId: buyer.baseUserId.toString() ?? baseUser._id.toString(),
+                    fullName: buyer.fullName,
+                    username: buyer.username,
+                    contact: buyer.contact,
+                    isPermanentlyBanned: Boolean(baseUser.isPermanentlyBanned),
+                    profilePictureUrl: buyer.profilePictureUrl,
+                    bio: buyer.bio,
+                    createdAt: buyer.createdAt ?? new Date(buyer.createdAt),
+                    updatedAt: buyer.updatedAt ?? new Date(buyer.updatedAt),
+                };
+            })
+        );
+
+        const response: AllBuyersResponseDtoType = {
+            success: true,
+            message: "All buyers fetched successfully.",
+            status: 200,
+            users: users
+        };
+        return response;
+    };
 
     getBuyerByEmail = async (email: string): Promise<BuyerResponseDtoType | null> => {
         if (!email || email.trim() === "") {

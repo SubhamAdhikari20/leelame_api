@@ -34,13 +34,15 @@ router.put("/forgot-password", buyerAuthController.forgotPassword);
 router.put("/verify-account/reset-password", buyerAuthController.verifyOtpForResetPassword);
 router.put("/reset-password", buyerAuthController.resetPassword);
 
-router.get("/logout", buyerAuthMiddleware.protect, buyerAuthController.logoutBuyer);
+router.get("/logout", buyerAuthController.logoutBuyer);
+// router.get("/logout", buyerAuthMiddleware.protect, buyerAuthController.logoutBuyer);
 
 // Buyer Other CRUDs
 router.put("/update-profile-details/:id", buyerAuthMiddleware.protect, buyerController.updateBuyerProfileDetails);
 router.put("/upload-profile-picture/:id", buyerAuthMiddleware.protect, upload.single("profile-picture-buyer"), buyerController.uploadProfilePicture);
 router.delete("/delete-account/:id", buyerAuthMiddleware.protect, buyerController.deleteBuyerAccount);
 router.get("/get-current-buyer/:id", buyerAuthMiddleware.protect, buyerController.getCurrentBuyer);
+router.get("/get-all-buyers", buyerController.getAllBuyers);
 
 // Get Current Buyer Dynamic Route
 router.get("/:id", buyerController.getBuyerById);

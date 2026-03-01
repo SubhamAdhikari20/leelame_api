@@ -1,6 +1,6 @@
 // src/controllers/product.controller.ts
 import type { Request, Response } from "express";
-import { ProductResponseDto, CreateProductDto, UpdateProductDto } from "./../dtos/product.dto.ts";
+import { ProductResponseDto, CreateProductDto, UpdateProductDto, VerifyAndSetCommissionForProductByAdminDto } from "./../dtos/product.dto.ts";
 import { ProductService } from "./../services/product.service.ts";
 import { z } from "zod";
 import { HttpError } from "./../errors/http-error.ts";
@@ -446,7 +446,7 @@ export class ProductController {
         }
     });
 
-    verifyProductByAdmin = asyncHandler(async (req: Request, res: Response) => {
+    verifyAndSetCommissionForProductByAdmin = asyncHandler(async (req: Request, res: Response) => {
         try {
             const productId = await req.params.id;
             if (!productId || productId.toString() === "") {
@@ -464,7 +464,16 @@ export class ProductController {
                 });
             }
 
-            const result = await this.productService.verifyProductByAdmin(productId.toString());
+            const body = await req.body;
+            const validatedData = VerifyAndSetCommissionForProductByAdminDto.safeParse(body);
+            if (!validatedData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedData.error)
+                });
+            }
+
+            const result = await this.productService.verifyAndSetCommissionForProductByAdmin(productId.toString(), validatedData.data);
 
             const validatedResponseProductData = ProductResponseDto.safeParse(result?.data);
             if (!validatedResponseProductData.success) {

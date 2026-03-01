@@ -3,6 +3,7 @@ import type { BidResponseDtoType, CreateBidDtoType, UpdateBidDtoType, AllBidsRes
 import type { BidRepositoryInterface } from "./../interfaces/bid.repository.interface.ts";
 import type { ProductRepositoryInterface } from "./../interfaces/product.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
+import { create } from "domain";
 
 
 export class BidService {
@@ -64,7 +65,9 @@ export class BidService {
                 _id: newBid._id.toString(),
                 productId: newBid.productId.toString(),
                 buyerId: newBid.buyerId.toString(),
-                bidAmount: newBid.bidAmount
+                bidAmount: newBid.bidAmount,
+                createdAt: newBid.createdAt,
+                updatedAt: newBid.updatedAt
             }
         };
         return response;
@@ -118,7 +121,9 @@ export class BidService {
                 _id: updateBid._id.toString(),
                 productId: updateBid.productId.toString(),
                 buyerId: updateBid.buyerId.toString(),
-                bidAmount: updateBid.bidAmount
+                bidAmount: updateBid.bidAmount,
+                createdAt: updateBid.createdAt,
+                updatedAt: updateBid.updatedAt
             }
         };
         return response;
@@ -154,7 +159,9 @@ export class BidService {
                 _id: existingBidById._id.toString(),
                 productId: existingBidById.productId.toString(),
                 buyerId: existingBidById.buyerId.toString(),
-                bidAmount: existingBidById.bidAmount
+                bidAmount: existingBidById.bidAmount,
+                createdAt: existingBidById.createdAt,
+                updatedAt: existingBidById.updatedAt
             }
         };
         return response;
@@ -172,7 +179,9 @@ export class BidService {
                     _id: bid._id.toString(),
                     productId: bid.productId.toString(),
                     buyerId: bid.buyerId.toString(),
-                    bidAmount: bid.bidAmount
+                    bidAmount: bid.bidAmount,
+                    createdAt: bid.createdAt,
+                    updatedAt: bid.updatedAt
                 };
             })
         );
@@ -198,7 +207,9 @@ export class BidService {
                     _id: bid._id.toString(),
                     productId: bid.productId.toString(),
                     buyerId: bid.buyerId.toString(),
-                    bidAmount: bid.bidAmount
+                    bidAmount: bid.bidAmount,
+                    createdAt: bid.createdAt,
+                    updatedAt: bid.updatedAt
                 };
             })
         );
@@ -224,7 +235,9 @@ export class BidService {
                     _id: bid._id.toString(),
                     productId: bid.productId.toString(),
                     buyerId: bid.buyerId.toString(),
-                    bidAmount: bid.bidAmount
+                    bidAmount: bid.bidAmount,
+                    createdAt: bid.createdAt,
+                    updatedAt: bid.updatedAt
                 };
             })
         );
@@ -250,7 +263,9 @@ export class BidService {
                     _id: bid._id.toString(),
                     productId: bid.productId.toString(),
                     buyerId: bid.buyerId.toString(),
-                    bidAmount: bid.bidAmount
+                    bidAmount: bid.bidAmount,
+                    createdAt: bid.createdAt,
+                    updatedAt: bid.updatedAt
                 };
             })
         );

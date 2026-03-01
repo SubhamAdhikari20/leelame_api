@@ -30,3 +30,10 @@ const productSchema = z.object({
 
 export type Product = z.infer<typeof productSchema>;
 export type ProductDocument = IProduct;
+
+// verify and set commission for product by admin
+const verifyAndSetCommissionForProductByAdminSchema = z.object({
+    isVerified: z.boolean(),
+    commission: z.number(),
+});
+export type VerifyAndSetCommissionForProductByAdmin = z.infer<typeof verifyAndSetCommissionForProductByAdminSchema>;
