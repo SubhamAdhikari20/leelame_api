@@ -1,20 +1,20 @@
-// src/controllers/bid.controller.ts
+// src/controllers/payment.controller.ts
 import type { Request, Response } from "express";
-import { BidResponseDto, CreateBidDto, UpdateBidDto } from "./../dtos/bid.dto.ts";
-import { BidService } from "./../services/bid.service.ts";
+import { PaymentResponseDto, InitiatePaymentDto, FinalizePaymentWithEsewaDto, FinalizePaymentWithKhaltiDto } from "./../dtos/payment.dto.ts";
+import { PaymentService } from "./../services/payment.service.ts";
 import { z } from "zod";
 import { HttpError } from "./../errors/http-error.ts";
 import asyncHandler from "./../middleware/async.middleware.ts";
 
 
-export class BidController {
-    private bidService: BidService;
+export class PaymentController {
+    private paymentService: PaymentService;
 
-    constructor(bidService: BidService) {
-        this.bidService = bidService;
+    constructor(paymentService: PaymentService) {
+        this.paymentService = paymentService;
     }
 
-    createBid = asyncHandler(async (req: Request, res: Response) => {
+    initiatePayment = asyncHandler(async (req: Request, res: Response) => {
         try {
             const tokenUserId = await req.user?._id;
             if (!tokenUserId || tokenUserId.toString() === "") {
@@ -25,7 +25,7 @@ export class BidController {
             }
 
             const body = await req.body;
-            const validatedData = CreateBidDto.safeParse(body);
+            const validatedData = InitiatePaymentDto.safeParse(body);
 
             if (!validatedData.success) {
                 return res.status(400).json({
@@ -34,20 +34,22 @@ export class BidController {
                 });
             }
 
-            const result = await this.bidService.createBid(validatedData.data);
+            const result = await this.paymentService.initiatePayment(validatedData.data);
 
-            const validatedResponseBidData = BidResponseDto.safeParse(result?.data);
-            if (!validatedResponseBidData.success) {
+            const validatedResponsePaymentData = PaymentResponseDto.safeParse(result?.data);
+            if (!validatedResponsePaymentData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedResponseBidData.error)
+                    message: z.prettifyError(validatedResponsePaymentData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedResponseBidData.data,
+                data: validatedResponsePaymentData.data,
+                gatewayUrl: result.gatewayUrl,
+                formData: result.formData,
             });
         }
         catch (error: Error | any) {
@@ -65,13 +67,100 @@ export class BidController {
         }
     });
 
-    updateBid = asyncHandler(async (req: Request, res: Response) => {
+    finalizePaymentWithEsewa = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const bidId = await req.params.id;
-            if (!bidId || bidId.toString() === "") {
+            const base64 = await req.query.data as string;
+            if (!base64) {
+                res.redirect(`${process.env.FRONTEND_URL}/payment/receipt?status=failed`);
+                return;
+            }
+
+            const jsonString = Buffer.from(base64, "base64").toString("utf-8");
+            const payload = JSON.parse(jsonString);
+
+            const result = await this.paymentService.finalizePaymentWithEsewa({
+                transactionId: payload.transaction_uuid,
+                gatewayRef: payload.transaction_code,
+                status: payload.status === "COMPLETE" ? "success" : "failed",
+            });
+
+            const validatedResponsePaymentData = PaymentResponseDto.safeParse(result?.data);
+            if (!validatedResponsePaymentData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: "Params Error! Bid id is not sent through params."
+                    message: z.prettifyError(validatedResponsePaymentData.error)
+                });
+            }
+
+            const status = validatedResponsePaymentData.data.status === "success" ? "success" : "failed";
+            res.redirect(
+                `${process.env.FRONTEND_URL}/payment/receipt?status=${status}&transaction_id=${payload.transaction_uuid}`
+            );
+            return;
+        }
+        catch (error: Error | any) {
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
+    finalizePaymentWithKhalti = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const { pidx, status, transaction_id, purchase_order_id } = req.query;
+
+            const isSuccess = status === "Completed";
+            const finalStatus = isSuccess ? "success" : "failed";
+
+            const result = await this.paymentService.finalizePaymentWithKhalti({
+                transactionId: purchase_order_id as string,
+                gatewayRef: transaction_id as string,
+                status: finalStatus,
+            });
+
+            const validatedResponsePaymentData = PaymentResponseDto.safeParse(result?.data);
+            if (!validatedResponsePaymentData.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: z.prettifyError(validatedResponsePaymentData.error)
+                });
+            }
+
+            res.redirect(
+                `${process.env.FRONTEND_URL}/payment/receipt?status=${finalStatus}&transaction_id=${transaction_id}`
+            );
+            return;
+        }
+        catch (error: Error | any) {
+            if (error instanceof HttpError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error"
+            });
+        }
+    });
+
+    deletePayment = asyncHandler(async (req: Request, res: Response) => {
+        try {
+            const paymentId = await req.params.id;
+            if (!paymentId || paymentId.toString() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Params Error! Payment id is not sent through params."
                 });
             }
 
@@ -83,29 +172,11 @@ export class BidController {
                 });
             }
 
-            const body = await req.body;
-            const validatedData = UpdateBidDto.safeParse(body);
-
-            if (!validatedData.success) {
-                return res.status(400).json({
-                    success: false,
-                    message: z.prettifyError(validatedData.error)
-                });
-            }
-
-            const result = await this.bidService.updateBid(bidId.toString(), validatedData.data);
-            const validatedResponseBidData = BidResponseDto.safeParse(result?.data);
-            if (!validatedResponseBidData.success) {
-                return res.status(400).json({
-                    success: false,
-                    message: z.prettifyError(validatedResponseBidData.error)
-                });
-            }
+            const result = await this.paymentService.deletePayment(paymentId.toString());
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedResponseBidData.data,
             });
         }
         catch (error: Error | any) {
@@ -123,29 +194,38 @@ export class BidController {
         }
     });
 
-    deleteBid = asyncHandler(async (req: Request, res: Response) => {
+    getPaymentById = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const bidId = await req.params.id;
-            if (!bidId || bidId.toString() === "") {
+            const paymentId = await req.params.id;
+            if (!paymentId || paymentId.toString() === "") {
                 return res.status(400).json({
                     success: false,
-                    message: "Params Error! Bid id is not sent through params."
+                    message: "Params Error! Payment id is not sent through params."
                 });
             }
 
-            const tokenUserId = await req.user?._id;
-            if (!tokenUserId || tokenUserId.toString() === "") {
+            // const tokenUserId = await req.user?._id;
+            // if (!tokenUserId || tokenUserId.toString() === "") {
+            //     return res.status(400).json({
+            //         success: false,
+            //         message: "Token Error! Token user id not found."
+            //     });
+            // }
+
+            const result = await this.paymentService.getPaymentById(paymentId.toString());
+
+            const validatedResponsePaymentData = PaymentResponseDto.safeParse(result?.data);
+            if (!validatedResponsePaymentData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: "Token Error! Token user id not found."
+                    message: z.prettifyError(validatedResponsePaymentData.error)
                 });
             }
-
-            const result = await this.bidService.deleteBid(bidId.toString());
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
+                data: validatedResponsePaymentData.data,
             });
         }
         catch (error: Error | any) {
@@ -163,38 +243,22 @@ export class BidController {
         }
     });
 
-    getBidById = asyncHandler(async (req: Request, res: Response) => {
+    getAllPayments = asyncHandler(async (req: Request, res: Response) => {
         try {
-            const bidId = await req.params.id;
-            if (!bidId || bidId.toString() === "") {
+            const result = await this.paymentService.getAllPayments();
+
+            const validatedPaymentsData = z.array(PaymentResponseDto).safeParse(result?.data);
+            if (!validatedPaymentsData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: "Params Error! Bid id is not sent through params."
-                });
-            }
-
-            const tokenUserId = await req.user?._id;
-            if (!tokenUserId || tokenUserId.toString() === "") {
-                return res.status(400).json({
-                    success: false,
-                    message: "Token Error! Token user id not found."
-                });
-            }
-
-            const result = await this.bidService.getBidById(bidId.toString());
-
-            const validatedResponseBidData = BidResponseDto.safeParse(result?.data);
-            if (!validatedResponseBidData.success) {
-                return res.status(400).json({
-                    success: false,
-                    message: z.prettifyError(validatedResponseBidData.error)
+                    message: z.prettifyError(validatedPaymentsData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedResponseBidData.data,
+                data: validatedPaymentsData.data,
             });
         }
         catch (error: Error | any) {
@@ -212,40 +276,7 @@ export class BidController {
         }
     });
 
-    getAllBids = asyncHandler(async (req: Request, res: Response) => {
-        try {
-            const result = await this.bidService.getAllBids();
-
-            const validatedBidsData = z.array(BidResponseDto).safeParse(result?.data);
-            if (!validatedBidsData.success) {
-                return res.status(400).json({
-                    success: false,
-                    message: z.prettifyError(validatedBidsData.error)
-                });
-            }
-
-            return res.status(result?.status ?? 200).json({
-                success: result?.success,
-                message: result?.message,
-                data: validatedBidsData.data,
-            });
-        }
-        catch (error: Error | any) {
-            if (error instanceof HttpError) {
-                return res.status(error.status).json({
-                    success: false,
-                    message: error.message
-                });
-            }
-
-            return res.status(500).json({
-                success: false,
-                message: "Internal Server Error"
-            });
-        }
-    });
-
-    findAllBidsByProductId = asyncHandler(async (req: Request, res: Response) => {
+    findAllPaymentsByProductId = asyncHandler(async (req: Request, res: Response) => {
         try {
             const productId = await req.params.productId;
             if (!productId || productId.toString() === "") {
@@ -255,20 +286,20 @@ export class BidController {
                 });
             }
 
-            const result = await this.bidService.findAllBidsByProductId(productId.toString());
+            const result = await this.paymentService.findAllPaymentsByProductId(productId.toString());
 
-            const validatedBidsData = z.array(BidResponseDto).safeParse(result?.data);
-            if (!validatedBidsData.success) {
+            const validatedPaymentsData = z.array(PaymentResponseDto).safeParse(result?.data);
+            if (!validatedPaymentsData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedBidsData.error)
+                    message: z.prettifyError(validatedPaymentsData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedBidsData.data,
+                data: validatedPaymentsData.data,
             });
         }
         catch (error: Error | any) {
@@ -286,7 +317,7 @@ export class BidController {
         }
     });
 
-    findAllBidsByBuyerId = asyncHandler(async (req: Request, res: Response) => {
+    findAllPaymentsByBuyerId = asyncHandler(async (req: Request, res: Response) => {
         try {
             const buyerId = await req.params.buyerId;
             if (!buyerId || buyerId.toString() === "") {
@@ -311,20 +342,20 @@ export class BidController {
             //     });
             // }
 
-            const result = await this.bidService.findAllBidsByBuyerId(buyerId.toString());
+            const result = await this.paymentService.findAllPaymentsByBuyerId(buyerId.toString());
 
-            const validatedBidsData = z.array(BidResponseDto).safeParse(result?.data);
-            if (!validatedBidsData.success) {
+            const validatedPaymentsData = z.array(PaymentResponseDto).safeParse(result?.data);
+            if (!validatedPaymentsData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedBidsData.error)
+                    message: z.prettifyError(validatedPaymentsData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedBidsData.data,
+                data: validatedPaymentsData.data,
             });
         }
         catch (error: Error | any) {
@@ -342,7 +373,7 @@ export class BidController {
         }
     });
 
-    findAllBidsBySellerId = asyncHandler(async (req: Request, res: Response) => {
+    findAllPaymentsBySellerId = asyncHandler(async (req: Request, res: Response) => {
         try {
             const sellerId = await req.params.sellerId;
             if (!sellerId || sellerId.toString() === "") {
@@ -367,20 +398,20 @@ export class BidController {
             //     });
             // }
 
-            const result = await this.bidService.findAllBidsBySellerId(sellerId.toString());
+            const result = await this.paymentService.findAllPaymentsBySellerId(sellerId.toString());
 
-            const validatedBidsData = z.array(BidResponseDto).safeParse(result?.data);
-            if (!validatedBidsData.success) {
+            const validatedPaymentsData = z.array(PaymentResponseDto).safeParse(result?.data);
+            if (!validatedPaymentsData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: z.prettifyError(validatedBidsData.error)
+                    message: z.prettifyError(validatedPaymentsData.error)
                 });
             }
 
             return res.status(result?.status ?? 200).json({
                 success: result?.success,
                 message: result?.message,
-                data: validatedBidsData.data,
+                data: validatedPaymentsData.data,
             });
         }
         catch (error: Error | any) {

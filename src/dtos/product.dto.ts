@@ -1,6 +1,6 @@
 // src/dtos/product.dto.ts
 import { z } from "zod";
-import { productNameValidation, productDescriptionValidation, productStartPriceValidation, productBidIntervalPriceValidation, productCommissionValidation } from "./../schemas/product.schema.ts";
+import { productNameValidation, productDescriptionValidation, productStartPriceValidation, productBidIntervalPriceValidation, productCommissionValidation, productBuyNowPriceValidation } from "./../schemas/product.schema.ts";
 
 
 // Create Product DTO
@@ -9,6 +9,7 @@ export const CreateProductDto = z.object({
     description: productDescriptionValidation.nullish(),
     startPrice: productStartPriceValidation,
     bidIntervalPrice: productBidIntervalPriceValidation,
+    buyNowPrice: productBuyNowPriceValidation.nullish(),
     endDate: z.coerce.date(),
     categoryId: z.string(),
     conditionId: z.string()
@@ -21,6 +22,7 @@ export const UpdateProductDto = z.object({
     description: productDescriptionValidation.nullish(),
     startPrice: productStartPriceValidation,
     bidIntervalPrice: productBidIntervalPriceValidation,
+    buyNowPrice: productBuyNowPriceValidation.nullish(),
     endDate: z.coerce.date(),
     removedExisitingProductImageUrls: z.array(z.string()),
     categoryId: z.string(),
@@ -45,6 +47,7 @@ export const ProductResponseDto = z.object({
     startPrice: z.number(),
     currentBidPrice: z.number(),
     bidIntervalPrice: z.number(),
+    buyNowPrice: z.number().nullish(),
     endDate: z.date(),
     productImageUrls: z.array(z.string()),
     isVerified: z.boolean(),

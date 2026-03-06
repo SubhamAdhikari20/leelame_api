@@ -39,3 +39,8 @@ export const productBidIntervalPriceValidation = z
     .coerce
     .number()
     .min(0, { message: "Product Bid Interval Price must be a positive number" });
+
+export const productBuyNowPriceValidation = z
+    .coerce
+    .number()
+    .min(0, { message: "Product Buy Now Price must be a positive number" });

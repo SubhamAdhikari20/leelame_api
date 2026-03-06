@@ -59,6 +59,10 @@ const productSchema: Schema<IProduct> = new Schema({
         type: Number,
         require: [true, "Please add the bid interval price between bids"],
     },
+    buyNowPrice: {
+        type: Number,
+        default: null
+    },
     endDate: {
         type: Date,
         required: [true, "End date is required"],

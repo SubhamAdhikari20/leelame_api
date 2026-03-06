@@ -27,7 +27,7 @@ export class ProductService {
             );
         }
 
-        const { productName, description, startPrice, bidIntervalPrice, endDate, categoryId, conditionId } = createProductData;
+        const { productName, description, startPrice, bidIntervalPrice, buyNowPrice, endDate, categoryId, conditionId } = createProductData;
 
         const createProductPayload: any = {
             productName: productName,
@@ -35,6 +35,7 @@ export class ProductService {
             startPrice: startPrice,
             currentBidPrice: startPrice,
             bidIntervalPrice: bidIntervalPrice,
+            buyNowPrice: buyNowPrice,
             endDate: endDate,
             sellerId: sellerId,
             categoryId: categoryId,
@@ -67,8 +68,9 @@ export class ProductService {
                 startPrice: newProduct.startPrice,
                 currentBidPrice: newProduct.currentBidPrice,
                 bidIntervalPrice: newProduct.bidIntervalPrice,
-                productImageUrls: newProduct.productImageUrls,
+                buyNowPrice: newProduct.buyNowPrice,
                 endDate: newProduct.endDate,
+                productImageUrls: newProduct.productImageUrls,
                 isVerified: newProduct.isVerified,
                 isSoldOut: newProduct.isSoldOut,
                 sellerId: newProduct.sellerId.toString(),
@@ -97,7 +99,7 @@ export class ProductService {
             );
         }
 
-        const { productName, description, startPrice, bidIntervalPrice, endDate, categoryId, conditionId, removedExisitingProductImageUrls } = updateProductData;
+        const { productName, description, startPrice, bidIntervalPrice, buyNowPrice, endDate, categoryId, conditionId, removedExisitingProductImageUrls } = updateProductData;
 
         const decodedProductId = decodeURIComponent(productId);
         const existingProductById = await this.productRepo.findProductById(decodedProductId);
@@ -110,6 +112,7 @@ export class ProductService {
             description: description,
             startPrice: startPrice,
             bidIntervalPrice: bidIntervalPrice,
+            buyNowPrice: buyNowPrice,
             endDate: endDate,
             categoryId: categoryId,
             conditionId: conditionId
@@ -151,8 +154,9 @@ export class ProductService {
                 startPrice: updatedProduct.startPrice,
                 currentBidPrice: updatedProduct.currentBidPrice,
                 bidIntervalPrice: updatedProduct.bidIntervalPrice,
-                productImageUrls: updatedProduct.productImageUrls,
+                buyNowPrice: updatedProduct.buyNowPrice,
                 endDate: updatedProduct.endDate,
+                productImageUrls: updatedProduct.productImageUrls,
                 isVerified: updatedProduct.isVerified,
                 isSoldOut: updatedProduct.isSoldOut,
                 sellerId: updatedProduct.sellerId.toString(),
@@ -210,8 +214,9 @@ export class ProductService {
                 startPrice: existingProductById.startPrice,
                 currentBidPrice: existingProductById.currentBidPrice,
                 bidIntervalPrice: existingProductById.bidIntervalPrice,
-                productImageUrls: existingProductById.productImageUrls,
+                buyNowPrice: existingProductById.buyNowPrice,
                 endDate: existingProductById.endDate,
+                productImageUrls: existingProductById.productImageUrls,
                 isVerified: existingProductById.isVerified,
                 isSoldOut: existingProductById.isSoldOut,
                 sellerId: existingProductById.sellerId.toString(),
@@ -241,8 +246,9 @@ export class ProductService {
                     startPrice: product.startPrice,
                     currentBidPrice: product.currentBidPrice,
                     bidIntervalPrice: product.bidIntervalPrice,
-                    productImageUrls: product.productImageUrls,
+                    buyNowPrice: product.buyNowPrice,
                     endDate: product.endDate,
+                    productImageUrls: product.productImageUrls,
                     isVerified: product.isVerified,
                     isSoldOut: product.isSoldOut,
                     sellerId: product.sellerId.toString(),
@@ -280,8 +286,9 @@ export class ProductService {
                     startPrice: product.startPrice,
                     currentBidPrice: product.currentBidPrice,
                     bidIntervalPrice: product.bidIntervalPrice,
-                    productImageUrls: product.productImageUrls,
+                    buyNowPrice: product.buyNowPrice,
                     endDate: product.endDate,
+                    productImageUrls: product.productImageUrls,
                     isVerified: product.isVerified,
                     isSoldOut: product.isSoldOut,
                     sellerId: product.sellerId.toString(),
@@ -319,8 +326,9 @@ export class ProductService {
                     startPrice: product.startPrice,
                     currentBidPrice: product.currentBidPrice,
                     bidIntervalPrice: product.bidIntervalPrice,
-                    productImageUrls: product.productImageUrls,
+                    buyNowPrice: product.buyNowPrice,
                     endDate: product.endDate,
+                    productImageUrls: product.productImageUrls,
                     isVerified: product.isVerified,
                     isSoldOut: product.isSoldOut,
                     sellerId: product.sellerId.toString(),
@@ -358,8 +366,9 @@ export class ProductService {
                     startPrice: product.startPrice,
                     currentBidPrice: product.currentBidPrice,
                     bidIntervalPrice: product.bidIntervalPrice,
-                    productImageUrls: product.productImageUrls,
+                    buyNowPrice: product.buyNowPrice,
                     endDate: product.endDate,
+                    productImageUrls: product.productImageUrls,
                     isVerified: product.isVerified,
                     isSoldOut: product.isSoldOut,
                     sellerId: product.sellerId.toString(),
@@ -406,8 +415,9 @@ export class ProductService {
                 startPrice: verifyAndSetCommissionForProduct.startPrice,
                 currentBidPrice: verifyAndSetCommissionForProduct.currentBidPrice,
                 bidIntervalPrice: verifyAndSetCommissionForProduct.bidIntervalPrice,
-                productImageUrls: verifyAndSetCommissionForProduct.productImageUrls,
+                buyNowPrice: verifyAndSetCommissionForProduct.buyNowPrice,
                 endDate: verifyAndSetCommissionForProduct.endDate,
+                productImageUrls: verifyAndSetCommissionForProduct.productImageUrls,
                 isVerified: verifyAndSetCommissionForProduct.isVerified,
                 isSoldOut: verifyAndSetCommissionForProduct.isSoldOut,
                 sellerId: verifyAndSetCommissionForProduct.sellerId.toString(),

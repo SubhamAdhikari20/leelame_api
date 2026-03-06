@@ -3,7 +3,6 @@ import type { BidResponseDtoType, CreateBidDtoType, UpdateBidDtoType, AllBidsRes
 import type { BidRepositoryInterface } from "./../interfaces/bid.repository.interface.ts";
 import type { ProductRepositoryInterface } from "./../interfaces/product.repository.interface.ts";
 import { HttpError } from "./../errors/http-error.ts";
-import { create } from "domain";
 
 
 export class BidService {

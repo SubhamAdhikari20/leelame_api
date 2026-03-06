@@ -17,6 +17,9 @@ import categoryRoute from "./routes/category.route.ts";
 import productRoute from "./routes/product.route.ts";
 import productConditionRoute from "./routes/product-condition.route.ts";
 import bidRoute from "./routes/bid.route.ts";
+import orderRoute from "./routes/order.route.ts";
+import paymentRoute from "./routes/payment.route.ts";
+import invoiceRoute from "./routes/invoice.route.ts";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -136,6 +139,15 @@ app.use("/api/product-condition", productConditionRoute);
 
 // ---------------------------- Bid Route -------------------------------
 app.use("/api/bid", bidRoute);
+
+// ---------------------------- Order Route -------------------------------
+app.use("/api/order", orderRoute);
+
+// ---------------------------- Payment Route -------------------------------
+app.use("/api/payment", paymentRoute);
+
+// ---------------------------- Invoice Route -------------------------------
+app.use("/api/invoice", invoiceRoute);
 
 app.get("/", (req: Request, res: Response) => {
     res.send("Hello, World!");

@@ -12,6 +12,7 @@ const productSchema = z.object({
     startPrice: z.number(),
     currentBidPrice: z.number(),
     bidIntervalPrice: z.number(),
+    buyNowPrice: z.number().nullish(),
     endDate: z.date(),
     productImageUrls: z.array(z.string()),
     categoryId: z.string(),
