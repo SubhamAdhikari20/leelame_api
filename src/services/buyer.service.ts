@@ -268,6 +268,7 @@ export class BuyerService {
 
         const users = await Promise.all(
             buyers.map(async (buyer) => {
+                console.log(buyer);
                 const baseUser = buyer.baseUserId
                     ? await this.userRepo.findUserById(buyer.baseUserId.toString())
                     : null;

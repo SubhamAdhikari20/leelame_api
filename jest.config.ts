@@ -1,4 +1,4 @@
-// jest.confing.ts
+// jest.config.ts
 import { createDefaultPreset, type JestConfigWithTsJest } from "ts-jest";
 
 const tsJestTransformCfg = createDefaultPreset().transform;
@@ -29,6 +29,8 @@ const config: JestConfigWithTsJest = {
     '!src/__tests__/**',
   ],
   setupFilesAfterEnv: ["<rootDir>/src/__tests__/setup.ts"],
+  maxWorkers: 1,
+  testTimeout: 60000,
 };
 
 export default config;
