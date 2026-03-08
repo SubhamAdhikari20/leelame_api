@@ -39,7 +39,7 @@ export class ProductRepository implements ProductRepositoryInterface {
     };
 
     findAllProductsBySellerId = async (sellerId: string): Promise<ProductDocument[] | null> => {
-        const products = await ProductModel.find({ sellerId: sellerId }).lean();
+        const products = await ProductModel.find({ sellerId: sellerId, isVerified: true }).lean();
         return products;
     };
 
