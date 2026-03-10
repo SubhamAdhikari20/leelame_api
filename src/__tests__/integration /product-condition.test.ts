@@ -7,10 +7,10 @@ import ProductConditionModel from "./../../models/product-condition.model.ts";
 describe("Product Condition Integration Tests", () => {
     const signUpEndPoint = "/api/users/admin/sign-up";
     const loginEndPoint = "/api/users/admin/login";
-    const createConditionEndPoint = "/api/product-condition/create";
-    const getAllConditionsEndPoint = "/api/product-condition/all";
-    const updateConditionEndPoint = "/api/product-condition/update/:id";
-    const deleteConditionEndPoint = "/api/product-condition/delete/:id";
+    const createConditionEndPoint = "/api/product-condition/create-product-condition";
+    const getAllConditionsEndPoint = "/api/product-condition/get-all-product-conditions";
+    const updateConditionEndPoint = "/api/product-condition/update-product-condition-details/:id";
+    const deleteConditionEndPoint = "/api/product-condition/delete-product-condition/:id";
 
     let adminToken: string;
     let conditionId: string;
@@ -19,7 +19,7 @@ describe("Product Condition Integration Tests", () => {
     const testAdmin = {
         fullName: "PC Admin",
         email: `pcadmin${unique}@example.com`,
-        contact: `9823${unique.slice(0, 6)}`,
+        contact: `9823${String(Date.now()).slice(-6)}`,
         password: "AdminPass@123",
         confirmPassword: "AdminPass@123",
         role: "admin",
@@ -60,8 +60,8 @@ describe("Product Condition Integration Tests", () => {
 
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
-        expect(response.body.condition.productConditionName).toBe(`ProductTestCondition${unique}`);
-        conditionId = response.body.condition._id;
+        expect(response.body.data.productConditionName).toBe(`ProductTestCondition${unique}`);
+        conditionId = response.body.data._id;
     }, 20000);
 
     test("should not create duplicate product condition and return 409", async () => {
@@ -81,14 +81,14 @@ describe("Product Condition Integration Tests", () => {
         const response = await request(app).get(getAllConditionsEndPoint);
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
-        expect(Array.isArray(response.body.conditions)).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
     }, 20000);
 
     test("should update product condition with admin token and return 200", async () => {
         const response = await request(app)
             .put(updateConditionEndPoint.replace(":id", conditionId))
             .set("Authorization", `Bearer ${adminToken}`)
-            .send({ productConditionEnum: "NEW" });
+            .send({ productConditionName: `ProductTestCondition${unique}`, productConditionEnum: "NEW" });
 
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);

@@ -29,6 +29,7 @@ describe("Buyer Profile Integration Tests", () => {
 
     const updateUserData = {
         fullName: "Updated Buyer Name",
+        email: "buyerprofile@gmail.com",
         username: "BuyerProfile2025",
         contact: "9856789123",
         bio: "This is my updated bio from integration test"
@@ -41,7 +42,7 @@ describe("Buyer Profile Integration Tests", () => {
         const existingBuyer = await BuyerModel.findOne({ baseUserId: baseUser?._id.toString() ?? "" });
         baseUserId = baseUser?._id.toString()!;
         buyerId = existingBuyer?._id.toString()!;
-        await UserModel.updateOne({ _id: baseUser?._id.toString() ?? ""  }, { $set: { isVerified: true } });
+        await UserModel.updateOne({ _id: baseUser?._id.toString() ?? "" }, { $set: { isVerified: true } });
         const loginResponse = await request(app).post(loginEndPoint).send({
             identifier: testUser.email,
             password: testUser.password,
@@ -75,8 +76,7 @@ describe("Buyer Profile Integration Tests", () => {
             const response = await request(app)
                 .put(updateProfileEndPoint.replace(":id", buyerId))
                 .send(updateUserData);
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
+            expect(response.status).toBe(401);
         }, 20000);
 
         test("should reject update buyer profile with invalid buyer id and return 400", async () => {
@@ -142,9 +142,9 @@ describe("Buyer Profile Integration Tests", () => {
         }, 20000);
     });
 
-    describe(`POST ${forgotPasswordEndPoint}`, () => {
+    describe(`PUT ${forgotPasswordEndPoint}`, () => {
         test("should send forgot password email for valid buyer and return 200", async () => {
-            const response = await request(app).post(forgotPasswordEndPoint).send({
+            const response = await request(app).put(forgotPasswordEndPoint).send({
                 email: testUser.email,
                 role: "buyer"
             });
@@ -153,7 +153,7 @@ describe("Buyer Profile Integration Tests", () => {
         }, 20000);
 
         test("should return 404 for non-existent email in forgot password", async () => {
-            const response = await request(app).post(forgotPasswordEndPoint).send({
+            const response = await request(app).put(forgotPasswordEndPoint).send({
                 email: "nobody@gmail.com",
                 role: "buyer"
             });

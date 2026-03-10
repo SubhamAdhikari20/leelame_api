@@ -1,6 +1,4 @@
 // src/__tests__/integration/bid.test.ts
-// FIXED VERSION - No more enum crash + reliable setup
-
 import request from "supertest";
 import app from "../../app.ts";
 import UserModel from "../../models/user.model.ts";
@@ -12,6 +10,7 @@ import ProductConditionModel from "../../models/product-condition.model.ts";
 
 describe("Bid Integration Tests", () => {
     let buyerToken = "";
+    let buyerId = "";
     let productId = "";
 
     const unique = Date.now().toString(36);
@@ -20,7 +19,7 @@ describe("Bid Integration Tests", () => {
         fullName: "Bid Test Buyer",
         email: `bidbuyer${unique}@example.com`,
         username: `bidbuyer${unique}`,
-        contact: `9864${unique.slice(0, 6)}`,
+        contact: `9864${String(Date.now()).slice(-6)}`,
         password: "Password@123",
         confirmPassword: "Password@123",
         terms: true,
@@ -30,7 +29,7 @@ describe("Bid Integration Tests", () => {
     const testSeller = {
         fullName: "Bid Test Seller",
         email: `bidseller${unique}@example.com`,
-        contact: `9876${unique.slice(0, 6)}`,
+        contact: `9876${String(Date.now() + 1).slice(-6)}`,
         password: "Password@123",
         confirmPassword: "Password@123",
         role: "seller"
@@ -43,6 +42,8 @@ describe("Bid Integration Tests", () => {
         await request(app).post("/api/users/buyer/sign-up").send(testBuyer);
         const buyerUser = await UserModel.findOne({ email: testBuyer.email });
         await UserModel.updateOne({ _id: buyerUser?._id.toString() ?? "" }, { $set: { isVerified: true } });
+        const buyerProfile = await BuyerModel.findOne({ baseUserId: buyerUser?._id.toString() ?? "" });
+        buyerId = buyerProfile?._id.toString() ?? "";
 
         const buyerLogin = await request(app).post("/api/users/buyer/login").send({
             identifier: testBuyer.email,
@@ -77,7 +78,7 @@ describe("Bid Integration Tests", () => {
         const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
         const productRes = await request(app)
-            .post("/api/product/create")
+            .post("/api/product/create-product")
             .set("Authorization", `Bearer ${sellerToken}`)
             .send({
                 productName: `BidProduct${unique}`,
@@ -103,16 +104,16 @@ describe("Bid Integration Tests", () => {
 
     test("should create a new bid with buyer token and return 201", async () => {
         const response = await request(app)
-            .post("/api/bid/create")
+            .post("/api/bid/create-bid")
             .set("Authorization", `Bearer ${buyerToken}`)
-            .send({ productId, bidAmount: 600 });
+            .send({ productId, buyerId, bidAmount: 600 });
 
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
     }, 20000);
 
     test("should get bids for product and return 200", async () => {
-        const response = await request(app).get(`/api/bid/product/${productId}`);
+        const response = await request(app).get(`/api/bid/get-all-bids-by-productId/${productId}`);
         expect(response.status).toBe(200);
     }, 20000);
 });

@@ -99,6 +99,9 @@ export class SellerController {
 
             const body = await req.body;
             const validatedData = UpdateSellerProfileDetailsDto.safeParse(body);
+            
+            console.log("body in controller: ", body);
+            console.log("validatedData in controller: ", validatedData);
 
             if (!validatedData.success) {
                 return res.status(400).json({

@@ -7,10 +7,11 @@ import BuyerModel from "../../../models/buyer.model.ts";
 
 describe("Buyer Authentication Integration Tests", () => {
     const unique = Date.now() + Math.random().toString(36).slice(2, 8);
+    const shortId = unique.toString().slice(-8);
     const testUser = {
         fullName: "Test User",
         email: `testbuyer${unique}@gmail.com`,
-        username: `BuyerTest${unique}`,
+        username: `BT${shortId}`,
         contact: "9864922260",
         password: "Password@123",
         confirmPassword: "Password@123",
@@ -49,7 +50,12 @@ describe("Buyer Authentication Integration Tests", () => {
         }, 20000);
 
         test("should not register buyer with existing email and return 409", async () => {
-            const response = await request(app).post(signUpEndPoint).send(testUser);
+            // Use different username and contact so only the email check fires
+            const response = await request(app).post(signUpEndPoint).send({
+                ...testUser,
+                username: `UI${shortId}`,
+                contact: "9800000010",
+            });
             expect(response.status).toBe(409);
             expect(response.body.success).toBe(false);
             expect(response.body.message).toBe("Email already registered!");
@@ -64,7 +70,7 @@ describe("Buyer Authentication Integration Tests", () => {
         }, 20000);
 
         test("should not register buyer with existing contact and return 409", async () => {
-            const duplicate = { ...testUser, email: `dup2${unique}@gmail.com`, username: `DupBuyer${unique}` };
+            const duplicate = { ...testUser, email: `dup2${unique}@gmail.com`, username: `DB${shortId}` };
             const response = await request(app).post(signUpEndPoint).send(duplicate);
             expect(response.status).toBe(409);
             expect(response.body.success).toBe(false);
@@ -98,13 +104,13 @@ describe("Buyer Authentication Integration Tests", () => {
 
     describe(`POST ${forgotPasswordEndPoint}`, () => {
         test("should send forgot password email for valid buyer and return 200", async () => {
-            const response = await request(app).post(forgotPasswordEndPoint).send({ email: testUser.email, role: "buyer" });
+            const response = await request(app).put(forgotPasswordEndPoint).send({ email: testUser.email, role: "buyer" });
             expect(response.status).toBe(200);
             expect(response.body.success).toBe(true);
         }, 20000);
 
         test("should return 404 for non-existent email in forgot password", async () => {
-            const response = await request(app).post(forgotPasswordEndPoint).send({ email: "nobody@gmail.com", role: "buyer" });
+            const response = await request(app).put(forgotPasswordEndPoint).send({ email: "nobody@gmail.com", role: "buyer" });
             expect(response.status).toBe(404);
             expect(response.body.success).toBe(false);
         }, 20000);

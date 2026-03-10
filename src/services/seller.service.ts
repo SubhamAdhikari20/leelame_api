@@ -47,6 +47,7 @@ export class SellerService {
                 role: exisitingBaseUserByBaseUserId.role,
                 isVerified: exisitingBaseUserByBaseUserId.isVerified,
                 profilePictureUrl: existingSellerById.profilePictureUrl,
+                bio: existingSellerById.bio,
                 isPermanentlyBanned: exisitingBaseUserByBaseUserId.isPermanentlyBanned,
             }
         };
@@ -83,6 +84,7 @@ export class SellerService {
                 isVerified: exisitingBaseUserByBaseUserId.isVerified,
                 profilePictureUrl: existingSellerById.profilePictureUrl,
                 isPermanentlyBanned: exisitingBaseUserByBaseUserId.isPermanentlyBanned,
+                bio: existingSellerById.bio
             }
         };
         return response;
@@ -147,6 +149,7 @@ export class SellerService {
                 role: updateBaseUser.role,
                 isVerified: updateBaseUser.isVerified,
                 profilePictureUrl: updatedSeller.profilePictureUrl,
+                bio: updatedSeller.bio,
                 isPermanentlyBanned: updateBaseUser.isPermanentlyBanned,
             }
         };

@@ -6,30 +6,34 @@ export const normalizeRemoveHttpUrl = (url?: string | null) => {
         return null;
     }
 
-    if (!(/^https?:\/\//.test(url))) {
-        return url;
+    const input = url.trim();
+
+    if (!(/^https?:\/\//i.test(input))) {
+        return input;
     }
 
-    const base = process.env.BASE_URL?.trim().replace(/\/+$/, "");
-    if (!base) {
-        return url.startsWith("/") ? url : `/${url}`;
-        // throw new Error("Missing backend api url!  Please set BASE_URL.");
+    // Parse absolute URLs and always keep only path/query/hash,
+    // so device-specific hosts do not affect file deletion paths.
+    try {
+        const parsed = new URL(input);
+        let cleanUrl = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+
+        if (!cleanUrl.startsWith("/")) {
+            cleanUrl = `/${cleanUrl}`;
+        }
+
+        cleanUrl = cleanUrl.replace(/\/{2,}/g, "/");
+        return cleanUrl.replace(/\/$/, "");
     }
+    catch {
+        // Fallback for malformed absolute URLs.
+        let cleanUrl = input.replace(/^https?:\/\/[^/]+/i, "");
 
-    let cleanUrl = url.replace(base, "");
-    if (!cleanUrl.startsWith("/")) {
-        cleanUrl = `/${cleanUrl}`;
+        if (!cleanUrl.startsWith("/")) {
+            cleanUrl = `/${cleanUrl}`;
+        }
+
+        cleanUrl = cleanUrl.replace(/\/{2,}/g, "/");
+        return cleanUrl.replace(/\/$/, "");
     }
-
-    // Remove any double slashes
-    cleanUrl = cleanUrl.replace(/\/+/g, "/");
-
-    // Remove trailing slash (optional, but cleaner for paths)
-    cleanUrl = cleanUrl.replace(/\/$/, "");
-
-    // const fullPath = `${url.replace(base, "").replace(/\/$/, "")}${url.startsWith("/") ? url : `/${url}`}`;
-    const fullPath = cleanUrl;
-    // console.log(fullPath);
-
-    return fullPath;
 };

@@ -45,7 +45,8 @@ describe("Seller Authentication Integration Tests", () => {
         }, 20000);
 
         test("should not register seller with existing email and return 409", async () => {
-            const response = await request(app).post(signUpEndPoint).send(testSellerData1);
+            // Use a different contact so only the email check fires (service checks contact first)
+            const response = await request(app).post(signUpEndPoint).send({ ...testSellerData1, contact: "9800000002" });
             expect(response.status).toBe(409);
             expect(response.body.success).toBe(false);
             expect(response.body.message).toBe("Email already registered!");
@@ -67,7 +68,7 @@ describe("Seller Authentication Integration Tests", () => {
 
     describe(`POST ${forgotPasswordEndPoint}`, () => {
         test("should send forgot password email for valid seller and return 200", async () => {
-            const response = await request(app).post(forgotPasswordEndPoint).send({ email: testSellerData1.email, role: "seller" });
+            const response = await request(app).put(forgotPasswordEndPoint).send({ email: testSellerData1.email, role: "seller" });
             expect(response.status).toBe(200);
             expect(response.body.success).toBe(true);
         }, 20000);

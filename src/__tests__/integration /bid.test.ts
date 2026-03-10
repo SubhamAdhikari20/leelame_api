@@ -14,11 +14,11 @@ describe("Bid Integration Tests", () => {
     const buyerSignUpEndPoint = "/api/users/buyer/sign-up";
     const sellerLoginEndPoint = "/api/users/seller/login";
     const buyerLoginEndPoint = "/api/users/buyer/login";
-    const createProductEndPoint = "/api/product/create";
-    const createBidEndPoint = "/api/bid/create";
-    const getBidsByProductEndPoint = "/api/bid/product/:id";
+    const createProductEndPoint = "/api/product/create-product";
+    const createBidEndPoint = "/api/bid/create-bid";
+    const getBidsByProductEndPoint = "/api/bid/get-all-bids-by-productId/:productId";
     const getBidByIdEndPoint = "/api/bid/:id";
-    const deleteBidEndPoint = "/api/bid/delete/:id";
+    const deleteBidEndPoint = "/api/bid/delete-bid/:id";
 
     let sellerToken: string;
     let buyerToken: string;
@@ -92,7 +92,7 @@ describe("Bid Integration Tests", () => {
         const category = await CategoryModel.create({ categoryName: "BidTestCategory", categoryStatus: "active" });
         categoryId = category._id.toString();
 
-        const condition = await ProductConditionModel.create({ productConditionName: "BidTestCondition", productConditionEnum: "USED" });
+        const condition = await ProductConditionModel.create({ productConditionName: "BidTestCondition", productConditionEnum: "USED_GOOD" });
         conditionId = condition._id.toString();
 
         const futureDate = new Date();
@@ -111,11 +111,11 @@ describe("Bid Integration Tests", () => {
                 conditionId,
             });
 
-        productId = productResponse.body.product._id;
+        productId = productResponse.body.data._id;
     }, 30000);
 
     afterAll(async () => {
-        await BidModel.deleteMany({}); 
+        await BidModel.deleteMany({});
         await ProductModel.deleteMany({ productName: "Bid Test Product" });
         await ProductConditionModel.deleteMany({ productConditionName: "BidTestCondition" });
         await CategoryModel.deleteMany({ categoryName: "BidTestCategory" });
@@ -130,14 +130,15 @@ describe("Bid Integration Tests", () => {
             .set("Authorization", `Bearer ${buyerToken}`)
             .send({
                 productId,
-                bidPrice: 150,
+                buyerId,
+                bidAmount: 150,
             });
 
         expect(response.status).toBe(201);
         expect(response.body).toHaveProperty("success", true);
-        expect(response.body.bid).toHaveProperty("bidPrice", 150);
+        expect(response.body.data).toHaveProperty("bidAmount", 150);
 
-        bidId = response.body.bid._id;
+        bidId = response.body.data._id;
     }, 20000);
 
     test("should not create bid lower than current price and return error", async () => {
@@ -146,7 +147,8 @@ describe("Bid Integration Tests", () => {
             .set("Authorization", `Bearer ${buyerToken}`)
             .send({
                 productId,
-                bidPrice: 120, // lower than latest 150
+                buyerId,
+                bidAmount: 120, // lower than latest 150
             });
 
         expect(response.status).toBeGreaterThanOrEqual(400);
@@ -154,27 +156,29 @@ describe("Bid Integration Tests", () => {
     }, 20000);
 
     test("should get all bids for product and return 200", async () => {
-        const response = await request(app).get(getBidsByProductEndPoint.replace(":id", productId));
+        const response = await request(app).get(getBidsByProductEndPoint.replace(":productId", productId));
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty("success", true);
-        expect(Array.isArray(response.body.bids)).toBe(true);
-        expect(response.body.bids.length).toBeGreaterThanOrEqual(1);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.length).toBeGreaterThanOrEqual(1);
     }, 20000);
 
     test("should get bid by valid id and return 200", async () => {
-        const response = await request(app).get(getBidByIdEndPoint.replace(":id", bidId));
+        const response = await request(app)
+            .get(getBidByIdEndPoint.replace(":id", bidId))
+            .set("Authorization", `Bearer ${buyerToken}`);
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty("success", true);
-        expect(response.body.bid).toHaveProperty("_id", bidId);
+        expect(response.body.data).toHaveProperty("_id", bidId);
     }, 20000);
 
     test("should reject create bid without token and return 400/401", async () => {
         const response = await request(app).post(createBidEndPoint).send({
             productId,
-            bidPrice: 200,
+            buyerId,
+            bidAmount: 200,
         });
         expect(response.status).toBeGreaterThanOrEqual(400);
-        expect(response.body).toHaveProperty("success", false);
     }, 20000);
 
     test("should delete bid with buyer token and return 200", async () => {

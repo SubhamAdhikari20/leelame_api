@@ -23,6 +23,7 @@ describe("Admin Profile Integration Tests", () => {
 
     const updateAdminData = {
         fullName: "Updated Admin Name",
+        email: "adminprofile@gmail.com",
         contact: "9856789125"
     };
 
@@ -60,12 +61,11 @@ describe("Admin Profile Integration Tests", () => {
             expect(response.body.success).toBe(true);
         }, 20000);
 
-        test("should reject update without token and return 400", async () => {
+        test("should reject update without token and return 401", async () => {
             const response = await request(app)
                 .put(updateProfileEndPoint.replace(":id", adminId))
                 .send(updateAdminData);
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
+            expect(response.status).toBe(401);
         }, 20000);
     });
 

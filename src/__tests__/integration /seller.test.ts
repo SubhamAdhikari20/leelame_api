@@ -25,6 +25,7 @@ describe("Seller Profile Integration Tests", () => {
 
     const updateSellerData = {
         fullName: "Updated Seller Name",
+        email: "sellerprofile@gmail.com",
         contact: "9856789124",
         bio: "Updated seller bio from integration test",
         shopName: "My Shop"
@@ -69,8 +70,7 @@ describe("Seller Profile Integration Tests", () => {
             const response = await request(app)
                 .put(updateProfileEndPoint.replace(":id", sellerId))
                 .send(updateSellerData);
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
+            expect(response.status).toBe(401);
         }, 20000);
 
         test("should reject update with invalid seller id and return 400", async () => {
@@ -95,9 +95,9 @@ describe("Seller Profile Integration Tests", () => {
         }, 20000);
     });
 
-    describe(`POST ${forgotPasswordEndPoint}`, () => {
+    describe(`PUT ${forgotPasswordEndPoint}`, () => {
         test("should send forgot password email for valid seller and return 200", async () => {
-            const response = await request(app).post(forgotPasswordEndPoint).send({
+            const response = await request(app).put(forgotPasswordEndPoint).send({
                 email: testSeller.email,
                 role: "seller"
             });

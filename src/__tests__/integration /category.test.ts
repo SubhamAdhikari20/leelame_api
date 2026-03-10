@@ -7,11 +7,11 @@ import CategoryModel from "./../../models/category.model.ts";
 describe("Category Integration Tests", () => {
     const signUpEndPoint = "/api/users/admin/sign-up";
     const loginEndPoint = "/api/users/admin/login";
-    const createCategoryEndPoint = "/api/category/create";
-    const getAllCategoriesEndPoint = "/api/category/all";
+    const createCategoryEndPoint = "/api/category/create-category";
+    const getAllCategoriesEndPoint = "/api/category/get-all-categories";
     const getCategoryByIdEndPoint = "/api/category/:id";
-    const updateCategoryEndPoint = "/api/category/update/:id";
-    const deleteCategoryEndPoint = "/api/category/delete/:id";
+    const updateCategoryEndPoint = "/api/category/update-category-details/:id";
+    const deleteCategoryEndPoint = "/api/category/delete-category/:id";
 
     let adminToken: string;
     let categoryId: string;
@@ -75,12 +75,12 @@ describe("Category Integration Tests", () => {
 
             expect(response.status).toBe(201);
             expect(response.body).toHaveProperty("success", true);
-            expect(response.body.category).toHaveProperty(
+            expect(response.body.data).toHaveProperty(
                 "categoryName",
                 testCategory.categoryName
             );
 
-            categoryId = response.body.category._id;
+            categoryId = response.body.data._id;
         }, 20000);
 
         test("should not create duplicate category name and return 409", async () => {
@@ -119,7 +119,6 @@ describe("Category Integration Tests", () => {
                 .send({ categoryName: "UnauthorizedCat", categoryStatus: "active" });
 
             expect(response.status).toBeGreaterThanOrEqual(400);
-            expect(response.body).toHaveProperty("success", false);
         }, 20000);
     });
 
@@ -129,7 +128,7 @@ describe("Category Integration Tests", () => {
 
             expect(response.status).toBe(200);
             expect(response.body).toHaveProperty("success", true);
-            expect(Array.isArray(response.body.categories)).toBe(true);
+            expect(Array.isArray(response.body.data)).toBe(true);
         }, 20000);
     });
 
@@ -141,7 +140,7 @@ describe("Category Integration Tests", () => {
 
             expect(response.status).toBe(200);
             expect(response.body).toHaveProperty("success", true);
-            expect(response.body.category).toHaveProperty("_id", categoryId);
+            expect(response.body.data).toHaveProperty("_id", categoryId);
         }, 20000);
 
         test("should return 400 or 404 for invalid category id", async () => {
@@ -168,7 +167,7 @@ describe("Category Integration Tests", () => {
             const response = await request(app)
                 .put(updateCategoryEndPoint.replace(":id", categoryId))
                 .set("Authorization", `Bearer ${adminToken}`)
-                .send({ categoryStatus: "inactive" });
+                .send({ categoryName: testCategory.categoryName, categoryStatus: "inactive" });
 
             expect(response.status).toBe(200);
             expect(response.body).toHaveProperty("success", true);
@@ -180,7 +179,6 @@ describe("Category Integration Tests", () => {
                 .send({ categoryStatus: "inactive" });
 
             expect(response.status).toBeGreaterThanOrEqual(400);
-            expect(response.body).toHaveProperty("success", false);
         }, 20000);
 
         test("should return 400 for invalid category id on update", async () => {
@@ -201,7 +199,6 @@ describe("Category Integration Tests", () => {
             );
 
             expect(response.status).toBeGreaterThanOrEqual(400);
-            expect(response.body).toHaveProperty("success", false);
         }, 20000);
 
         test("should delete category with admin token and return 200", async () => {

@@ -122,9 +122,8 @@ export class ProductController {
                 // console.log("validatedData: ", validatedData);
             }
             else {
-                // console.log("body: ", body);
-
                 validatedData = UpdateProductDto.safeParse(body);
+                // console.log("body: ", body);
                 // console.log("validatedData: ", validatedData);
             }
 

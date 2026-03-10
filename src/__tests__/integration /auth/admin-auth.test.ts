@@ -45,7 +45,8 @@ describe("Admin Authentication Integration Tests", () => {
         }, 20000);
 
         test("should not register admin with existing email and return 409", async () => {
-            const response = await request(app).post(signUpEndPoint).send(testAdminData1);
+            // Use a different contact so only the email check fires (service checks contact first)
+            const response = await request(app).post(signUpEndPoint).send({ ...testAdminData1, contact: "9800000001" });
             expect(response.status).toBe(409);
             expect(response.body.success).toBe(false);
             expect(response.body.message).toBe("Email already registered!");
@@ -61,7 +62,7 @@ describe("Admin Authentication Integration Tests", () => {
 
     describe(`POST ${forgotPasswordEndPoint}`, () => {
         test("should send forgot password email for valid admin and return 200", async () => {
-            const response = await request(app).post(forgotPasswordEndPoint).send({ email: testAdminData1.email, role: "admin" });
+            const response = await request(app).put(forgotPasswordEndPoint).send({ email: testAdminData1.email, role: "admin" });
             expect(response.status).toBe(200);
             expect(response.body.success).toBe(true);
         }, 20000);
